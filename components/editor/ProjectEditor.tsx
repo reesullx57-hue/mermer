@@ -15,8 +15,19 @@ import {
 import CalibrationStep from './CalibrationStep';
 import LayoutStep from './LayoutStep';
 
-// Fix Bug 1: Don't SSR Three.js/R3F - causes ReactCurrentOwner crash
-const View3D = dynamic(() => import('./View3D'), { ssr: false });
+// Vanilla Three.js View3D - still use dynamic to defer loading until tab is active
+const View3D = dynamic(() => import('./View3D'), { 
+  ssr: false,
+  loading: () => (
+    <div className="max-w-6xl mx-auto">
+      <div className="card">
+        <div className="w-full h-[600px] bg-gray-800 rounded-lg flex items-center justify-center">
+          <p className="text-gray-400">3D görünüm yükleniyor...</p>
+        </div>
+      </div>
+    </div>
+  ),
+});
 
 interface Project {
   id: string;
