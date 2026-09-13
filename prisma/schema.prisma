@@ -1,0 +1,73 @@
+// Prisma schema for Mermer stone fabrication app
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id              String    @id @default(uuid())
+  name            String
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slabPhotoUrl    String?
+  slabWidth       Float?    // in mm
+  slabHeight      Float?    // in mm
+  calibrationData String?   // JSON: corner points, transform matrix
+  calibratedImageUrl String?
+  pieces          Piece[]
+  approvals       Approval[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Piece {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  type        String   // "rectangle", "L-shape", "polygon", "dxf"
+  geometry    String   // JSON: points for polygon
+  x           Float    // position on slab (mm)
+  y           Float    // position on slab (mm)
+  rotation    Float    @default(0) // degrees
+  flipped     Boolean  @default(false)
+  width       Float?   // mm
+  height      Float?   // mm
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model Approval {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  token       String   @unique
+  clientName  String?
+  approvedAt  DateTime?
+  snapshotData String? // JSON: complete state at approval time
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([token])
+}
