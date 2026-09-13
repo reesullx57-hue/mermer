@@ -13,9 +13,6 @@ export default function HomePage() {
               <span className="text-xl font-bold text-white">Mermer</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors">
-                Fiyatlandırma
-              </Link>
               <Link href="/features" className="text-gray-300 hover:text-white transition-colors">
                 Özellikler
               </Link>
@@ -31,7 +28,7 @@ export default function HomePage() {
                 Giriş
               </Link>
               <Link href="/demo" className="btn-primary">
-                Demo ile Başla
+                Ücretsiz Başla
               </Link>
             </div>
           </div>
@@ -47,20 +44,17 @@ export default function HomePage() {
             </h1>
             <p className="text-xl md:text-2xl text-gray-400 mb-8">
               Telefon kameranızla plaka fotoğrafı çekin, damarları eşleştirin, 
-              3D önizleyin ve CNC için hazır DXF çıktısı alın.
+              3D önizleyin ve CNC için hazır DXF çıktısı alın. Tamamen ücretsiz.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/demo" className="btn-primary flex items-center space-x-2">
-                <span>Ücretsiz Deneyin</span>
+                <span>Hemen Başla</span>
                 <ArrowRight size={20} />
               </Link>
-              <Link href="/pricing" className="btn-outline">
-                Fiyatları İnceleyin
+              <Link href="/features" className="btn-outline">
+                Özellikleri İnceleyin
               </Link>
             </div>
-            <p className="mt-6 text-sm text-gray-500">
-              Kredi kartı gerekmez • 14 gün ücretsiz deneme • Her zaman iptal edebilirsiniz
-            </p>
           </div>
         </div>
       </section>
@@ -71,13 +65,12 @@ export default function HomePage() {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-white">
             Basit İş Akışı
           </h2>
-          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
             {[
               { icon: Camera, title: 'Fotoğraf', desc: 'Plaka fotoğrafı çekin' },
               { icon: Ruler, title: 'Kalibrasyon', desc: '4 köşe işaretleyin' },
               { icon: Layout, title: 'Yerleşim', desc: 'Parçaları yerleştirin' },
               { icon: Box, title: '3D Önizleme', desc: 'Sonucu görün' },
-              { icon: CheckCircle, title: 'Onay', desc: 'Müşteri onayı alın' },
               { icon: Download, title: 'Export', desc: 'DXF indirin' },
             ].map((step, i) => (
               <div key={i} className="text-center">
@@ -111,15 +104,15 @@ export default function HomePage() {
               },
               {
                 title: 'İnteraktif 3D',
-                desc: 'Yerleşimi 3D olarak görüntüleyin, döndürün ve sonucu müşteriye gösterin.',
-              },
-              {
-                title: 'Müşteri Onayı',
-                desc: 'Paylaşılabilir link gönderin, dijital imza alın ve tasarımı kilitleyin.',
+                desc: 'Yerleşimi 3D olarak görüntüleyin, döndürün ve detayları inceleyin.',
               },
               {
                 title: 'CNC Hazır DXF',
-                desc: 'Onaylanan yerleşimi kalibrasyon boyutlarıyla tam DXF formatında indirin.',
+                desc: 'Yerleşimi kalibrasyon boyutlarıyla tam DXF formatında indirin.',
+              },
+              {
+                title: 'Tamamen Ücretsiz',
+                desc: 'Tüm özellikler her zaman ücretsiz. Gizli ücret veya sınırlama yok.',
               },
             ].map((feature, i) => (
               <div key={i} className="card">
@@ -139,10 +132,10 @@ export default function HomePage() {
               Bugün Başlayın
             </h2>
             <p className="text-xl text-gray-300 mb-8">
-              14 gün ücretsiz deneyin. Kredi kartı gerekmez.
+              Tamamen ücretsiz, sınırsız kullanım.
             </p>
             <Link href="/demo" className="btn-primary inline-flex items-center space-x-2">
-              <span>Demo ile Başla</span>
+              <span>Hemen Başla</span>
               <ArrowRight size={20} />
             </Link>
           </div>
@@ -166,7 +159,6 @@ export default function HomePage() {
               <h4 className="font-semibold text-white mb-3">Ürün</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/features" className="text-gray-400 hover:text-white">Özellikler</Link></li>
-                <li><Link href="/pricing" className="text-gray-400 hover:text-white">Fiyatlandırma</Link></li>
                 <li><Link href="/demo" className="text-gray-400 hover:text-white">Demo</Link></li>
               </ul>
             </div>

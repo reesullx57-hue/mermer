@@ -4,7 +4,11 @@ export default function FAQPage() {
   const faqs = [
     {
       q: 'Mermer nasıl çalışır?',
-      a: 'Telefonunuzla plakanın fotoğrafını çekin, 4 köşeyi işaretleyerek gerçek boyutları belirtin. Sistem perspektif düzeltmesi yapar. Ardından şablon parçalarını yerleştirip damarları eşleştirin, 3D önizleyin, müşteri onayı alın ve CNC için DXF indirin.',
+      a: 'Telefonunuzla plakanın fotoğrafını çekin, 4 köşeyi işaretleyerek gerçek boyutları belirtin. Sistem perspektif düzeltmesi yapar. Ardından şablon parçalarını yerleştirip damarları eşleştirin, 3D önizleyin ve CNC için DXF indirin.',
+    },
+    {
+      q: 'Mermer ücretli mi?',
+      a: 'Hayır, Mermer tamamen ücretsizdir. Sınırsız proje, sınırsız parça, tüm özellikler. Gizli ücret veya abonelik yok.',
     },
     {
       q: 'Hangi cihazlarla kullanabilirim?',
@@ -27,16 +31,8 @@ export default function FAQPage() {
       a: 'Evet, DXF formatındaki mevcut şablonlarınızı doğrudan yükleyebilir ve plakaya yerleştirebilirsiniz.',
     },
     {
-      q: 'Müşteri onayı nasıl çalışır?',
-      a: 'Her proje için benzersiz bir link oluşturulur. Bu linki müşterinize gönderin. Müşteri tasarımı inceler ve dijital imza ile onaylar. Onaylanan tasarım kilitlenir ve zaman damgası ile kaydedilir.',
-    },
-    {
       q: 'Verilerim güvende mi?',
       a: 'Evet, tüm veriler şifrelenmiş olarak saklanır. Projeleriniz ve fotoğraflarınız sadece sizin hesabınızdan erişilebilir.',
-    },
-    {
-      q: 'Destek alabiliyor muyum?',
-      a: 'Evet, e-posta desteği sağlıyoruz. Genellikle 24 saat içinde yanıt veriyoruz.',
     },
   ];
 

@@ -12,7 +12,6 @@ interface Project {
   updatedAt: string;
   slabPhotoUrl: string | null;
   pieces: any[];
-  approvals: any[];
 }
 
 interface DashboardClientProps {
@@ -175,11 +174,6 @@ export default function DashboardClient({ projects: initialProjects, user }: Das
 
                 <div className="space-y-2 text-sm text-gray-400 mb-4">
                   <p>{project.pieces.length} parça</p>
-                  <p>
-                    {project.approvals.some((a) => a.approvedAt)
-                      ? 'Onaylandı ✓'
-                      : 'Onay bekliyor'}
-                  </p>
                   <p className="text-xs">
                     Güncelleme: {new Date(project.updatedAt).toLocaleDateString('tr')}
                   </p>

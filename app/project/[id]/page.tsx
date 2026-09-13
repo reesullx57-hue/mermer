@@ -24,7 +24,6 @@ export default async function ProjectPage({
       pieces: {
         orderBy: { orderIndex: 'asc' },
       },
-      approvals: true,
     },
   });
 

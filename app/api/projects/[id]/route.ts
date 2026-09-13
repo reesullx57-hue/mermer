@@ -23,7 +23,6 @@ export async function GET(
         pieces: {
           orderBy: { orderIndex: 'asc' },
         },
-        approvals: true,
       },
     });
 

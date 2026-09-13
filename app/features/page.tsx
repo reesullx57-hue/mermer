@@ -35,19 +35,19 @@ export default function FeaturesPage() {
             },
             {
               title: 'İnteraktif 3D Görüntüleme',
-              desc: 'Yerleşimi üç boyutlu olarak görüntüleyin. Modeli döndürün, yakınlaştırın. Müşterilere gerçekçi önizleme gösterin.',
-            },
-            {
-              title: 'Müşteri Onay Sistemi',
-              desc: 'Proje için paylaşılabilir link oluşturun. Müşteri tasarımı inceler, 2D ve 3D görünümleri kontrol eder, dijital imza ile onaylar. Onaylanan tasarım kilitlenir.',
+              desc: 'Yerleşimi üç boyutlu olarak görüntüleyin. Modeli döndürün, yakınlaştırın. Gerçekçi önizleme görün.',
             },
             {
               title: 'CNC Hazır DXF Export',
-              desc: 'Onaylanan yerleşimi standart DXF formatında indirin. Tüm parçalar kalibrasyon boyutlarına göre mutlak milimetre koordinatlarında. Direkt CNC makinelerine aktarabilirsiniz.',
+              desc: 'Yerleşimi standart DXF formatında indirin. Tüm parçalar kalibrasyon boyutlarına göre mutlak milimetre koordinatlarında. Direkt CNC makinelerine aktarabilirsiniz.',
             },
             {
               title: 'Proje Yönetimi',
-              desc: 'Tüm projelerinizi tek yerde saklayın. Proje oluşturun, yeniden adlandırın, silin. Her proje fotoğraf, kalibrasyon, yerleşim ve onay durumunu içerir.',
+              desc: 'Tüm projelerinizi tek yerde saklayın. Proje oluşturun, yeniden adlandırın, silin. Her proje fotoğraf, kalibrasyon ve yerleşimi içerir.',
+            },
+            {
+              title: 'Tamamen Ücretsiz',
+              desc: 'Sınırsız proje, sınırsız parça, tüm özellikler. Gizli ücret yok, abonelik yok.',
             },
           ].map((feature, i) => (
             <div key={i} className="card">

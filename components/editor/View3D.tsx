@@ -90,7 +90,7 @@ export default function View3D({ project }: View3DProps) {
           <div>
             <p className="text-gray-400">Durum</p>
             <p className="text-white font-semibold text-lg">
-              {project.approvals.some((a: any) => a.approvedAt) ? 'Onaylı ✓' : 'Taslak'}
+              {project.pieces.length > 0 ? 'Hazır' : 'Taslak'}
             </p>
           </div>
         </div>

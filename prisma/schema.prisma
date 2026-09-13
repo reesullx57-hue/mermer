@@ -30,7 +30,6 @@ model Project {
   calibrationData String?   // JSON: corner points, transform matrix
   calibratedImageUrl String?
   pieces          Piece[]
-  approvals       Approval[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -55,19 +54,4 @@ model Piece {
   updatedAt   DateTime @updatedAt
 
   @@index([projectId])
-}
-
-model Approval {
-  id          String   @id @default(uuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  token       String   @unique
-  clientName  String?
-  approvedAt  DateTime?
-  snapshotData String? // JSON: complete state at approval time
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([projectId])
-  @@index([token])
 }

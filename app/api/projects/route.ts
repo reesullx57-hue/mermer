@@ -14,7 +14,6 @@ export async function GET() {
       orderBy: { updatedAt: 'desc' },
       include: {
         pieces: true,
-        approvals: true,
       },
     });
 

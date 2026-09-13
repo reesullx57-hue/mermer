@@ -15,7 +15,6 @@ export default async function DashboardPage() {
     orderBy: { updatedAt: 'desc' },
     include: {
       pieces: true,
-      approvals: true,
     },
   });
 
@@ -28,12 +27,6 @@ export default async function DashboardPage() {
       ...piece,
       createdAt: piece.createdAt.toISOString(),
       updatedAt: piece.updatedAt.toISOString(),
-    })),
-    approvals: p.approvals.map(a => ({
-      ...a,
-      createdAt: a.createdAt.toISOString(),
-      updatedAt: a.updatedAt.toISOString(),
-      approvedAt: a.approvedAt?.toISOString() || null,
     })),
   }));
 

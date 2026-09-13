@@ -3,6 +3,25 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateDXF, pieceToDXFPoints } from '@/lib/dxf';
 
+// Fix Bug 2: Sanitize filename to ASCII-safe for Content-Disposition
+function sanitizeFilename(filename: string): string {
+  return filename
+    .normalize('NFD') // Decompose unicode
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .replace(/[ığĞİıÖöÜüŞşÇç]/g, (char) => {
+      const map: Record<string, string> = {
+        'ı': 'i', 'İ': 'I', 'ğ': 'g', 'Ğ': 'G',
+        'ö': 'o', 'Ö': 'O', 'ü': 'u', 'Ü': 'U',
+        'ş': 's', 'Ş': 'S', 'ç': 'c', 'Ç': 'C'
+      };
+      return map[char] || char;
+    })
+    .replace(/[^a-zA-Z0-9-_ ]/g, '') // Remove non-ASCII
+    .replace(/\s+/g, '-') // Spaces to dashes
+    .replace(/-+/g, '-') // Collapse multiple dashes
+    .trim();
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -42,11 +61,12 @@ export async function GET(
     }));
 
     const dxfContent = generateDXF(dxfPieces);
+    const safeFilename = sanitizeFilename(project.name) || 'export';
 
     return new NextResponse(dxfContent, {
       headers: {
         'Content-Type': 'application/dxf',
-        'Content-Disposition': `attachment; filename="${project.name}.dxf"`,
+        'Content-Disposition': `attachment; filename="${safeFilename}.dxf"`,
       },
     });
   } catch (error) {

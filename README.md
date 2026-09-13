@@ -1,32 +1,31 @@
 # Mermer
 
-**Taş atölyeleri için profesyonel dijital yerleşim çözümü**
+**Taş atölyeleri için ücretsiz dijital yerleşim çözümü**
 
-Mermer, mermer ve granit atölyelerinin plaka fotoğraflarını kalibre edip, şablon parçalarını yerleştirip, damarları eşleştirebileceği ve CNC için DXF çıktısı alabileceği modern bir web uygulamasıdır.
+Mermer, mermer ve granit atölyelerinin plaka fotoğraflarını kalibre edip, şablon parçalarını yerleştirip, damarları eşleştirebileceği ve CNC için DXF çıktısı alabileceği tamamen ücretsiz bir web uygulamasıdır.
 
 ## 🚀 Özellikler
 
-### ✅ Tam İşlevsel, Üretim Kalitesinde Uygulama
+### ✅ Tam İşlevsel, Ücretsiz Uygulama
 
 - **📸 Fotoğraf Tabanlı Kalibrasyon**: Telefon kamerasıyla çekilen plaka fotoğraflarını 4 nokta perspektif düzeltme ile kalibre edin
 - **📐 Damar Eşleştirme**: Parçaları sürükleyin, döndürün, çevirin - her parça altındaki gerçek dokuyu gösterir
 - **🎨 İnteraktif 3D Görüntüleme**: Three.js ile gerçekçi 3D önizleme, döndürme, zoom ve pan
-- **✅ Müşteri Onay Sistemi**: Paylaşılabilir link, dijital imza, zaman damgası ile onay kilitleme
 - **📥 DXF Export**: Standart CNC uyumlu DXF formatında dosya indirme
 - **🗃️ Proje Yönetimi**: Oluşturma, düzenleme, silme - tüm veriler SQLite ile kalıcı
 - **🔐 Kimlik Doğrulama**: E-posta/şifre kaydı VEYA tek tıkla demo girişi
 - **🎭 Demo Veri**: Sentetik mermer dokusu ve örnek parçalarla hazır demo projesi
+- **💯 Tamamen Ücretsiz**: Sınırsız proje, sınırsız parça, tüm özellikler
 
-### 🌐 Tam Pazarlama Sitesi
+### 🌐 Pazarlama Sitesi
 
 - Açılış sayfası (iş akışı, özellikler, CTA)
-- Fiyatlandırma sayfası (tek plan, SSS)
 - Özellikler detay sayfası
 - SSS sayfası
 - İletişim formu
 - Gizlilik politikası
 - Kullanım şartları
-- Profesyonel, modern B2B SaaS tasarımı
+- Profesyonel, modern tasarım
 
 ## 🛠️ Teknoloji Stack'i
 
@@ -75,7 +74,7 @@ npm start
 ## 🎯 Kullanım Akışı
 
 ### 1️⃣ Giriş
-- Ana sayfada "Demo ile Başla" butonuna tıklayın
+- Ana sayfada "Hemen Başla" butonuna tıklayın
 - VEYA "Kayıt Ol" ile kendi hesabınızı oluşturun
 
 ### 2️⃣ Demo Projesi İnceleyin
@@ -104,16 +103,9 @@ Demo girişi otomatik olarak örnek bir mutfak tezgahı projesi oluşturur:
 ### 6️⃣ 3D Önizleme
 - "3D Önizleme" sekmesine geçin
 - Fare ile döndürün, zoom yapın, kaydırın
-- Müşteriye göstermek için ideal
+- Yerleşimi üç boyutlu olarak inceleyin
 
-### 7️⃣ Müşteri Onayı
-1. "Paylaş" butonuna tıklayın
-2. Oluşan link'i kopyalayın ve müşteriye gönderin
-3. Müşteri link'i açar, 2D/3D görünümleri inceler
-4. Adını girerek dijital olarak onaylar
-5. Onay timestamp ile kaydedilir ve proje kilitlenir
-
-### 8️⃣ DXF Export
+### 7️⃣ DXF Export
 - "DXF İndir" butonuna tıklayın
 - Standart DXF dosyası indirilir
 - Tüm parçalar kalibrasyon boyutlarına göre mutlak mm koordinatlarında
@@ -128,48 +120,24 @@ mermer/
 │   │   ├── auth/              # Login, register, demo, logout
 │   │   ├── projects/          # CRUD operations
 │   │   ├── upload/            # File upload
-│   │   ├── export/            # DXF export
-│   │   └── approval/          # Approval system
-│   ├── dashboard/             # Projects dashboard
-│   ├── project/[id]/          # Project editor
-│   ├── approval/[token]/      # Client approval page
+│   │   └── export/            # DXF export
+│   ├── dashboard/             # Proje yönetimi
+│   ├── project/[id]/          # Proje editörü
 │   ├── login/                 # Login page
 │   ├── register/              # Registration
 │   ├── demo/                  # Demo auto-login
-│   ├── pricing/               # Pricing page
-│   ├── features/              # Features page
-│   ├── faq/                   # FAQ
-│   ├── contact/               # Contact form
-│   ├── privacy/               # Privacy policy
-│   ├── terms/                 # Terms of service
-│   ├── layout.tsx             # Root layout
-│   ├── page.tsx               # Landing page
-│   └── globals.css            # Global styles
-├── components/                 # React components
-│   ├── editor/                # Editor components
-│   │   ├── ProjectEditor.tsx  # Main editor
-│   │   ├── CalibrationStep.tsx # Photo calibration
-│   │   ├── LayoutStep.tsx     # Layout editor
-│   │   └── View3D.tsx         # 3D visualization
-│   ├── DashboardClient.tsx    # Dashboard UI
-│   └── ApprovalClient.tsx     # Approval UI
-├── lib/                        # Utilities
-│   ├── prisma.ts              # Prisma client
-│   ├── auth.ts                # JWT authentication
-│   ├── homography.ts          # Perspective transform
-│   └── dxf.ts                 # DXF generation
-├── prisma/                     # Database
-│   ├── schema.prisma          # Database schema
-│   └── migrations/            # Migration history
-├── public/                     # Static files
-│   ├── sample-marble.svg      # Demo marble texture
-│   └── uploads/               # User uploads
-├── scripts/                    # Utility scripts
-│   └── generate-marble.js     # Generate demo texture
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
-└── README.md
+│   └── [marketing pages]      # Landing, features, etc.
+├── components/                 # React bileşenleri
+│   ├── editor/               # Calibration, Layout, 3D
+│   └── [UI components]
+├── lib/                       # Utilities
+│   ├── auth.ts               # JWT
+│   ├── homography.ts         # Perspektif
+│   ├── dxf.ts               # Export
+│   └── prisma.ts            # DB client
+├── prisma/                   # Schema & migrations
+├── public/                   # Statik dosyalar
+└── scripts/                  # Yardımcı scriptler
 ```
 
 ## 🗄️ Veritabanı Şeması
@@ -183,7 +151,7 @@ mermer/
 - Plaka fotoğrafı URL'si
 - Plaka boyutları (genişlik, yükseklik mm)
 - Kalibrasyon verileri (JSON: köşe noktaları, transform matrisi)
-- İlişki: Birden fazla parça, onay kayıtları
+- İlişki: Birden fazla parça
 
 ### Piece
 - Proje referansı
@@ -192,11 +160,6 @@ mermer/
 - Pozisyon (x, y mm), rotasyon (derece), flip (boolean)
 - Boyutlar (genişlik, yükseklik mm)
 - Sıra indeksi
-
-### Approval
-- Proje referansı, benzersiz token
-- Müşteri adı, onay tarihi
-- Snapshot verileri (JSON: onay anındaki tam proje durumu)
 
 ## 🔒 Güvenlik
 
@@ -215,7 +178,7 @@ mermer/
 ## 🎨 Tasarım
 
 - Koyu tema (dark mode)
-- Endüstriyel/modern B2B SaaS görünümü
+- Modern B2B görünümü
 - Gradyan aksan renkleri (mavi-mor-pembe)
 - Masaüstü öncelikli editör, mobile-friendly marketing
 - Lucide React ikonlar
@@ -226,64 +189,37 @@ mermer/
 Bir değerlendirici şunları yapabilir:
 
 1. ✅ Ana sayfayı ziyaret et → iş akışını gör
-2. ✅ "Demo ile Başla" → otomatik giriş
+2. ✅ "Hemen Başla" → otomatik giriş
 3. ✅ Örnek projeyi aç → kalibrasyon göster
 4. ✅ "Parça Ekle" → sürükle, döndür, çevir
 5. ✅ "3D Önizleme" → etkileşimli model
-6. ✅ "Paylaş" → link kopyala
-7. ✅ Yeni sekmede approval link'i aç → müşteri görünümü
-8. ✅ Dijital imza ile onayla
-9. ✅ "DXF İndir" → CNC dosyası indir
-10. ✅ Pricing, FAQ, Legal sayfalarını ziyaret et
+6. ✅ "DXF İndir" → CNC dosyası indir
+7. ✅ Features, FAQ, legal sayfalarını ziyaret et
 
-## 📝 Geliştirme Notları
+## 📝 Son Değişiklikler
 
-### Homografi Algoritması
-- 4 nokta perspektif düzeltme (DLT algoritması)
-- Kalibrasyon hassasiyeti fotoğraf kalitesine bağlı
-- Tipik kullanımda ±2-3mm doğruluk
+### Kritik Buglar Düzeltildi
+- **Bug 1**: Three.js SSR hatası düzeltildi - `View3D` artık `dynamic import` ile `ssr: false`
+- **Bug 2**: Türkçe karakter sorunu düzeltildi - DXF dosya adları ASCII-safe sanitize ediliyor
 
-### DXF Format
-- AutoCAD 2000 (AC1015) uyumluluğu
-- LWPOLYLINE entity'leri
-- Milimetre birim
-- Her parça için TEXT label
-- Standart CAD yazılımlarıyla uyumlu
+### Özellik Kaldırıldı
+- ❌ Fiyatlandırma/ödeme sistemi kaldırıldı - uygulama tamamen ücretsiz
+- ❌ Müşteri onay/paylaşım akışı kaldırıldı
+- ✅ DXF export her zaman kullanılabilir
 
-### Canvas Optimizasyonu
-- Responsive canvas boyutlandırma
-- Zoom/pan desteği
-- Seçilen parça vurgulama
-- Grid ve ruler gösterimi
+## 🚧 Gelecek Geliştirmeler
 
-### 3D Rendering
-- React Three Fiber ile declarative 3D
-- OrbitControls ile kullanıcı etkileşimi
-- Basit box geometry (hızlı render)
-- Ambient + directional ışıklandırma
-
-## 🚧 Gelecek Geliştirmeler (Production için)
-
-- [ ] Gerçek Stripe entegrasyonu
-- [ ] E-posta bildirimleri (onay, hatırlatma)
 - [ ] Gelişmiş DXF import (mevcut şablonları yükle)
 - [ ] Çoklu plaka desteği (projede birden fazla plaka)
 - [ ] Undo/Redo stack'i
 - [ ] Keyboard shortcuts
 - [ ] Proje şablonları
-- [ ] Takım işbirliği (paylaşılan projeler)
 - [ ] Dosya boyutu sınırlamaları
-- [ ] Image CDN entegrasyonu
 - [ ] Gerçek SVD tabanlı homografi
-- [ ] Metrik ve analitik
 
 ## 📄 Lisans
 
 Bu proje demo amaçlıdır. Üretim kullanımı için uygun lisans seçiniz.
-
-## 🤝 Katkıda Bulunma
-
-Pull request'ler kabul edilir. Büyük değişiklikler için önce bir issue açınız.
 
 ## 📧 İletişim
 
@@ -291,4 +227,4 @@ Sorularınız için: destek@mermer.app
 
 ---
 
-**2026 Mermer - Taş atölyeleri için profesyonel yerleşim çözümü**
+**2026 Mermer - Taş atölyeleri için ücretsiz yerleşim çözümü**

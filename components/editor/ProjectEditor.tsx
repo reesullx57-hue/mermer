@@ -2,19 +2,21 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   ArrowLeft,
   Camera,
   Ruler,
   Layout,
   Box,
-  Share2,
   Download,
   Save,
 } from 'lucide-react';
 import CalibrationStep from './CalibrationStep';
 import LayoutStep from './LayoutStep';
-import View3D from './View3D';
+
+// Fix Bug 1: Don't SSR Three.js/R3F - causes ReactCurrentOwner crash
+const View3D = dynamic(() => import('./View3D'), { ssr: false });
 
 interface Project {
   id: string;
@@ -24,7 +26,6 @@ interface Project {
   slabHeight: number | null;
   calibrationData: string | null;
   pieces: any[];
-  approvals: any[];
 }
 
 interface ProjectEditorProps {
@@ -43,8 +44,6 @@ export default function ProjectEditor({ project: initialProject }: ProjectEditor
       : 'layout'
   );
   const [saving, setSaving] = useState(false);
-
-  const isApproved = project.approvals.some((a) => a.approvedAt);
 
   const saveProject = async (updates: Partial<Project>) => {
     setSaving(true);
@@ -85,22 +84,6 @@ export default function ProjectEditor({ project: initialProject }: ProjectEditor
     }
   };
 
-  const createApprovalLink = async () => {
-    try {
-      const res = await fetch(`/api/approval/${project.id}`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const url = `${window.location.origin}/approval/${data.token}`;
-        navigator.clipboard.writeText(url);
-        alert(`Onay linki kopyalandı:\n${url}`);
-      }
-    } catch (error) {
-      console.error('Failed to create approval link:', error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex flex-col">
       {/* Header */}
@@ -117,23 +100,10 @@ export default function ProjectEditor({ project: initialProject }: ProjectEditor
               </Link>
               <div className="w-px h-6 bg-gray-700"></div>
               <h1 className="text-xl font-semibold text-white">{project.name}</h1>
-              {isApproved && (
-                <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full">
-                  Onaylandı ✓
-                </span>
-              )}
             </div>
 
             <div className="flex items-center space-x-3">
               {saving && <span className="text-sm text-gray-400">Kaydediliyor...</span>}
-              <button
-                onClick={createApprovalLink}
-                disabled={!project.pieces.length || isApproved}
-                className="btn-secondary flex items-center space-x-2 disabled:opacity-50"
-              >
-                <Share2 size={18} />
-                <span>Paylaş</span>
-              </button>
               <button
                 onClick={exportDXF}
                 disabled={!project.pieces.length}
