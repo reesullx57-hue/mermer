@@ -15,17 +15,30 @@ export interface QuoteFormData {
     leg2?: number;
     leg3?: number;
   };
-  sinkHoles: number;
+  sink: {
+    type: SinkType;
+    holes: number;
+  };
   cooktopHole: boolean;
-  skirtingEnabled: boolean;
-  skirtingHeightCm?: number;
-  trimEnabled: boolean;
-  trimModel?: string;
+  skirting: {
+    enabled: boolean;
+    heightCm?: number;
+  };
+  trim: {
+    enabled: boolean;
+    model?: string;
+  };
+  sideBox: {
+    enabled: boolean;
+    sizeCm?: number;
+  };
+  panelled: boolean;
   install: boolean;
   address: {
     city: string;
     district: string;
   };
+  dealerId?: string | null;
 }
 
 export interface QuoteLine {

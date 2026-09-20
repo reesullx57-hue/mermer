@@ -1,28 +1,29 @@
 import type { QuoteFormData, QuoteResponse, QuoteError } from '@/types/quote';
 
-const MOCK_ENABLED = process.env.NEXT_PUBLIC_PRICING_MOCK === 'true';
+const MOCK_ENABLED = false; // Live API only, no mock default
 
 export async function getQuote(formData: QuoteFormData): Promise<QuoteResponse> {
   if (MOCK_ENABLED) {
-    throw new Error('Mock mode is no longer supported. Please use the live API.');
+    throw new Error('Mock mode is disabled. Live API only.');
   }
   
   try {
-    // Build the request payload according to the pricing engine contract
+    // Build nested request payload per PO requirements
     const requestBody = {
       stoneColorId: formData.stoneColorId,
       thicknessId: formData.thicknessId,
       formTypeId: formData.formTypeId,
       edgeTypeId: formData.edgeTypeId,
       dimensions: formData.dimensions,
-      sinkHoles: formData.sinkHoles,
+      sink: formData.sink,
       cooktopHole: formData.cooktopHole,
       install: formData.install,
-      skirtingEnabled: formData.skirtingEnabled,
-      skirtingHeightCm: formData.skirtingHeightCm,
-      trimEnabled: formData.trimEnabled,
-      trimModel: formData.trimModel,
+      skirting: formData.skirting,
+      trim: formData.trim,
+      sideBox: formData.sideBox,
+      panelled: formData.panelled,
       address: formData.address,
+      dealerId: formData.dealerId || null,
     };
 
     const response = await fetch('/api/pricing/quote', {

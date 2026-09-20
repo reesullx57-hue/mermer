@@ -1,11 +1,11 @@
 /**
- * Catalog IDs from database seed
- * These are the CUIDs generated when seeding the database
+ * Catalog IDs from Pricing Engine database seed
+ * These are the CUIDs used in the verified Pricing Engine
  */
 
 // Stone Colors (Quartz White used for Golden Test A)
 export const STONE_COLORS = {
-  QUARTZ_WHITE: 'cmu9t6lau000o8m8hf38wp4xp',
+  QUARTZ_WHITE: 'cmu9pojis000vjrrp5epidwok', // Used for Golden Test A
   QUARTZ_GREY: 'cmu9t6lau000s8m8h11tzka7g',
   QUARTZ_BLACK: 'cmu9t6lau000t8m8h7moot8md',
   QUARTZ_BEIGE: 'cmu9t6lau000u8m8hgh37yipe',
@@ -26,25 +26,25 @@ export const STONE_COLORS = {
 
 // Thicknesses
 export const THICKNESSES = {
-  CM_2: 'cmu9t6lb0001c8m8hg28mr6ql',
-  CM_3: 'cmu9t6lb0001d8m8h18u3kmvi', // Used for Golden Test A
-  CM_4: 'cmu9t6lb0001e8m8hn181yck3',
+  CM_2: 'cmu9pojiy001cjrrpmjzqfhp5',
+  CM_3: 'cmu9pojiy001djrrp8x5dfbpi', // Used for Golden Test A
+  CM_4: 'cmu9pojiy001ejrrpi6k42vjt',
 } as const;
 
 // Form Types
 export const FORM_TYPES = {
-  STRAIGHT: 'cmu9t6lb3001f8m8hoxcp3z3n',
-  L: 'cmu9t6lb3001g8m8h5p95hmsc', // Used for Golden Test A
-  U: 'cmu9t6lb4001h8m8hz6kruuhx',
-  ISLAND: 'cmu9t6lb4001i8m8hkyv7vq6a',
+  STRAIGHT: 'cmu9pojiz001fjrrp7x06vmew',
+  L: 'cmu9pojj0001gjrrp0678b8d4', // Used for Golden Test A
+  U: 'cmu9pojj0001hjrrp48iwhnvu',
+  ISLAND: 'cmu9pojj0001ijrrpnqe67dgj',
 } as const;
 
 // Edge Types
 export const EDGE_TYPES = {
-  STRAIGHT: 'cmu9t6lb8001j8m8hrqov9rb7',
-  RADIUS: 'cmu9t6lb8001k8m8hoou2xgs8', // Used for Golden Test A
-  BEVEL: 'cmu9t6lb8001m8m8hd1buc1gx',
-  IRON: 'cmu9t6lb8001l8m8hnsgulr7w',
+  STRAIGHT: 'cmu9pojj2001jjrrpigr18zl7',
+  RADIUS: 'cmu9pojj2001jjrrps0l86qvb', // Used for Golden Test A
+  BEVEL: 'cmu9pojj2001kjrrp8mh93ry1',
+  IRON: 'cmu9pojj2001ljrrpwfnafz6d',
 } as const;
 
 // Helper to get catalog ID by enum-like key

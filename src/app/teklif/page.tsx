@@ -6,32 +6,47 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import type { QuoteFormData, QuoteResponse, FormType } from '@/types/quote';
+import type { QuoteFormData, QuoteResponse, FormType, SinkType } from '@/types/quote';
 import { getQuote } from '@/lib/pricing/quote-client';
 import { STONE_COLORS, THICKNESSES, FORM_TYPES, EDGE_TYPES, getThicknessId, getFormTypeId, getEdgeTypeId } from '@/lib/pricing/catalog-ids';
 import { Loader2 } from 'lucide-react';
 
 export default function TeklifPage() {
   const [formData, setFormData] = useState<QuoteFormData>({
-    stoneColorId: STONE_COLORS.QUARTZ_WHITE,
-    thicknessId: THICKNESSES.CM_3,
-    formTypeId: FORM_TYPES.L,
-    edgeTypeId: EDGE_TYPES.RADIUS,
+    stoneColorId: STONE_COLORS.QUARTZ_WHITE, // cmu9pojis000vjrrp5epidwok
+    thicknessId: THICKNESSES.CM_3, // cmu9pojiy001djrrp8x5dfbpi
+    formTypeId: FORM_TYPES.L, // cmu9pojj0001gjrrp0678b8d4
+    edgeTypeId: EDGE_TYPES.RADIUS, // cmu9pojj2001jjrrps0l86qvb
     dimensions: {
       formType: 'L',
       leg1: 320,
       leg2: 180,
       depth: 65,
     },
-    sinkHoles: 1,
+    sink: {
+      type: 'undermount',
+      holes: 1,
+    },
     cooktopHole: true,
-    skirtingEnabled: false,
-    trimEnabled: false,
+    skirting: {
+      enabled: false,
+      heightCm: 10,
+    },
+    trim: {
+      enabled: false,
+      model: 'standard',
+    },
+    sideBox: {
+      enabled: false,
+      sizeCm: 0,
+    },
+    panelled: false,
     install: true,
     address: {
       city: 'İstanbul',
       district: 'Kadıköy',
     },
+    dealerId: null,
   });
 
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
