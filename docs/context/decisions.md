@@ -351,3 +351,98 @@ const lastUpdatedAt = latestAudit?.createdAt;
 - Slightly higher query complexity vs. FK column, but negligible for admin UIs
 - Scales naturally to all entity types without schema changes
 - Future: consider materialized view or cached computed field if performance becomes issue
+
+---
+
+## ADR-019 — Texture Upload Strategy
+**Status:** Accepted (F2 Gate 3).
+
+**Decision:** F2 implements local filesystem stub for stone texture uploads (`/uploads/textures/`). F3+ will add cloud storage adapter (R2/S3) with CDN integration. StoneColor.textureUrl stores the public URL or path.
+
+**Rationale:**
+- F2 needs texture upload for stone catalog admin, but cloud storage integration is out of scope
+- Local filesystem sufficient for demo/testing
+- Adapter pattern allows seamless F3+ migration without API contract changes
+
+**Implementation:**
+- F2: POST /api/admin/stone-colors accepts optional texture file → save to `/uploads/textures/{id}.{ext}` → textureUrl = `/uploads/textures/{id}.{ext}`
+- F3+: Adapter uploads to R2/S3 → textureUrl = `https://cdn.example.com/textures/{id}.{ext}`
+- StoneColor.textureUrl is nullable string (URL or path)
+
+**Impact:**
+- `/uploads/textures/` added to .gitignore
+- F2 deployment must serve `/uploads/` static files
+- F3 migration: batch upload existing textures to cloud, update textureUrl in DB
+
+---
+
+## ADR-020 — CSV Import Library and Atomic Transactions
+**Status:** Planned (F2 Gate 4+).
+
+**Decision:** CSV import for stones/dealers/shipping uses a streaming parser library (e.g., `papaparse`, `csv-parse`) with atomic transaction boundaries. Full validation before commit; rollback on any row failure.
+
+**Rationale:**
+- Large CSV files (1000+ stones) require memory-efficient streaming
+- All-or-nothing import prevents partial/corrupt data
+- Pre-validation pass before DB writes ensures clean rollback on error
+
+**Implementation (planned):**
+```typescript
+// Parse → Validate all rows → Prisma.$transaction([...creates])
+// Return: { success: true, imported: 1234 } or { success: false, errors: [...] }
+```
+
+**Impact:**
+- Import endpoint will be slower (validation + transaction overhead) but safer
+- Error response includes row-level detail for user correction
+- Detailed design deferred to import gate
+
+---
+
+## ADR-021 — AuditLog UI Filtering Approach
+**Status:** Planned (F2 Gate 5+ Audit UI).
+
+**Decision:** Admin audit log UI supports filtering by: entityType, action, userId (actor), date range, and optional entityId. Pagination required (cursor or offset). Full-text search on before/after JSON deferred to F3+.
+
+**Rationale:**
+- AuditLog table grows unbounded; must paginate
+- Common admin queries: "who changed this entity?" and "what did user X change today?"
+- JSON search (e.g., PostgreSQL `jsonb_path_query`) adds index complexity; defer until user demand
+
+**Implementation (planned):**
+```typescript
+GET /api/admin/audit-logs?entityType=PriceRule&action=UPDATE&userId={id}&from=2026-09-01&limit=50&cursor={id}
+```
+
+**Impact:**
+- Index on (entityType, action, userId, createdAt) required for performance
+- Detailed design deferred to audit UI gate
+
+---
+
+## ADR-022 — Cache Tag Strategy for Catalog Mutations
+**Status:** Accepted (F2 Gate 3).
+
+**Decision:** Cache invalidation tags by mutation type:
+- **PriceRule mutations**: `pricing:v1:*` only (rules, tax, shipping, all)
+- **Stone/StoneColor mutations**: `stones:v1:all` + `pricing:v1:all` (stone prices affect quotes)
+- **Dealer mutations** (F3+): `dealers:v1:all` + `pricing:v1:all` (discounts affect quotes)
+
+**Rationale:**
+- Stone m2Price changes must invalidate both catalog cache AND pricing quotes
+- PriceRule changes (SINK_HOLE, INSTALL) don't affect stone catalog, so no stones:* invalidation
+- Granular tags allow targeted invalidation; `*:all` tags for broad cache busts
+
+**Implementation:**
+```typescript
+// PriceRule update
+invalidatePricingCache(); // → ['pricing:v1:all', 'pricing:v1:rules', ...]
+
+// StoneColor update (m2Price change)
+invalidateCatalogCache('stones'); // → ['stones:v1:all', 'pricing:v1:all']
+```
+
+**Impact:**
+- Pricing module expands to `invalidateCatalogCache(type: 'stones' | 'dealers')`
+- Integration tests assert correct tag combinations for each mutation type
+- Next.js revalidateTag called for production; stub logs tags in F2

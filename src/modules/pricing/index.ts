@@ -445,25 +445,38 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
 
 /**
  * Invalidate pricing-related cache tags
- * Called after price rule, stone, or dealer updates to ensure fresh data
+ * Called after price rule updates
  * 
- * Cache tag strategy (ADR-014):
- * - pricing:v1:* → Price rules, tax config, shipping zones
- * - stones:v1:* → Stone brands, types, colors (catalog data)
- * - dealers:v1:* → Dealer discounts, configurations
+ * Cache tag strategy (ADR-022):
+ * - PriceRule mutations → pricing:v1:* only
  */
 export async function invalidatePricingCache(): Promise<void> {
-  // F2 Gate 2: Stub implementation (logs tags, no actual Next.js cache)
-  // Production: would use revalidateTag() from 'next/cache'
-  
   const tags = [
     'pricing:v1:all',
     'pricing:v1:rules',
     'pricing:v1:tax',
     'pricing:v1:shipping',
-    // Stones and dealers invalidated on their own CRUD (F2 Gate 3+)
-    // 'stones:v1:all',
-    // 'dealers:v1:all',
+  ];
+  
+  console.log('Cache invalidation requested for tags:', tags);
+  
+  // TODO F2: Implement actual cache invalidation when Next.js cache is wired
+  // import { revalidateTag } from 'next/cache';
+  // tags.forEach(tag => revalidateTag(tag));
+}
+
+/**
+ * Invalidate catalog cache tags (stones or dealers)
+ * Called after stone/dealer mutations
+ * 
+ * Cache tag strategy (ADR-022):
+ * - Stone/StoneColor mutations → stones:v1:all + pricing:v1:all
+ * - Dealer mutations → dealers:v1:all + pricing:v1:all
+ */
+export async function invalidateCatalogCache(type: 'stones' | 'dealers'): Promise<void> {
+  const tags = [
+    `${type}:v1:all`,
+    'pricing:v1:all', // Catalog changes affect pricing
   ];
   
   console.log('Cache invalidation requested for tags:', tags);

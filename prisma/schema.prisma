@@ -151,6 +151,7 @@ model StoneColor {
   nameTr         String
   m2Price        Decimal         @db.Decimal(12, 2)
   wastePercent   Decimal?        @db.Decimal(12, 4)
+  textureUrl     String?
   isActive       Boolean         @default(true)
   configurations Configuration[]
   createdAt      DateTime        @default(now())
