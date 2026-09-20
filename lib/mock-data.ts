@@ -5,9 +5,9 @@ export const mockColors = [
     stoneId: 'stone1',
     code: 'WHITE_CLASSIC',
     nameTr: 'Klasik Beyaz',
-    m2Price: '1800',  // Updated from 1680
+    m2Price: '1800',
     wastePercent: '0.15',
-    textureUrl: '/textures/white-classic.jpg',
+    textureUrl: 'public/uploads/textures/550e8400-e29b-41d4-a716-446655440000.jpg',
     isActive: true,
     stone: {
       id: 'stone1',
@@ -27,7 +27,7 @@ export const mockColors = [
     nameTr: 'Premium Beyaz',
     m2Price: '2400',
     wastePercent: '0.12',
-    textureUrl: '/textures/white-premium.jpg',
+    textureUrl: 'public/uploads/textures/7c9e6679-7425-40de-944b-e07fc1f90ae7.png',
     isActive: true,
     stone: {
       id: 'stone1',

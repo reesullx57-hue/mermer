@@ -440,27 +440,27 @@ export default function StoneColorsTab() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Doku Görseli (ADR-019 Stub)
+                  Doku Görseli URL (ADR-019)
                 </label>
                 <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={formData.textureUrl}
+                    onChange={(e) => setFormData({ ...formData, textureUrl: e.target.value })}
+                    placeholder="public/uploads/textures/550e8400-e29b-41d4-a716-446655440000.jpg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Veya dosya yükleyin:
+                  </p>
                   <input
                     type="file"
                     onChange={handleFileInput}
                     accept="image/*"
                     className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                   />
-                  {formData.textureUrl && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700">
-                      <ImageIcon className="w-4 h-4" />
-                      <span className="truncate">{formData.textureUrl}</span>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500">
-                    ADR-019 stub: Dosya yerel yol olarak kaydedilir
-                  </p>
                 </div>
               </div>
-
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"

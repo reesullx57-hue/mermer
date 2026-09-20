@@ -155,6 +155,30 @@ DELETE /api/admin/stone-colors/:id
 
 ---
 
+### 6. Texture Upload Path (ADR-019 Stub)
+
+**Screenshot:** Edit form showing texture path in required format
+
+![Texture Path](screenshots/stones-texture-path.png)
+
+**Shows:**
+- ✅ **Texture URL field with path:** `public/uploads/textures/550e8400-e29b-41d4-a716-446655440000.jpg`
+- ✅ Path format exactly as required: **`public/uploads/textures/{UUID}.{ext}`**
+- ✅ ADR-019 label: "Doku Görseli URL (ADR-019)"
+- ✅ Monospace font for path clarity
+- ✅ File upload button: "Choose File" with Turkish label "Veya dosya yükleyin:"
+- ✅ Path visible and editable in text input
+- ✅ UUID format: `550e8400-e29b-41d4-a716-446655440000` (RFC 4122)
+- ✅ File extension: `.jpg` (supports `.jpg`, `.png`, `.webp`)
+
+**ADR-019 Implementation:**
+- Text input allows manual path entry
+- File upload button for future integration
+- Path stored as string in `textureUrl` field
+- Format ready for S3/CDN migration in future gates
+
+---
+
 ## 🔧 Technical Details
 
 ### Field Specifications
