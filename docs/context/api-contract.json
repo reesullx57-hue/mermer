@@ -1,8 +1,164 @@
 {
-  "apiVersion": "1.0.0",
+  "apiVersion": "1.1.0",
   "lastUpdated": "2026-09-20",
-  "notes": "Contract v1.0.0 with database ID references (see ADR-013). Frontend must load catalog IDs before making quote requests.",
+  "notes": "Contract v1.1.0: Nested request schema (ADR-013) + catalog endpoints (ADR-014). Frontend loads IDs dynamically from catalog APIs.",
   "endpoints": {
+    "GET /api/thicknesses": {
+      "description": "List active thickness options with coefficients (ADR-014)",
+      "responses": {
+        "200": {
+          "description": "Array of active thickness options",
+          "contentType": "application/json",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "cm", "nameTr", "coefficient", "isActive"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Database CUID",
+                  "example": "cmu9pojiy001djrrp8x5dfbpi"
+                },
+                "cm": {
+                  "type": "integer",
+                  "description": "Thickness in centimeters",
+                  "example": 3
+                },
+                "nameTr": {
+                  "type": "string",
+                  "description": "Turkish display name",
+                  "example": "3 cm"
+                },
+                "coefficient": {
+                  "type": "string",
+                  "description": "Pricing coefficient (fixed 2 decimals)",
+                  "example": "1.10"
+                },
+                "isActive": {
+                  "type": "boolean",
+                  "description": "Whether option is currently available",
+                  "example": true
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "cmu9pojiy001djrrp8x5dfbpi",
+              "cm": 3,
+              "nameTr": "3 cm",
+              "coefficient": "1.10",
+              "isActive": true
+            }
+          ]
+        }
+      }
+    },
+    "GET /api/form-types": {
+      "description": "List active form type options with coefficients (ADR-014)",
+      "responses": {
+        "200": {
+          "description": "Array of active form type options",
+          "contentType": "application/json",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "code", "nameTr", "coefficient", "isActive"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Database CUID",
+                  "example": "cmu9pojj0001gjrrp0678b8d4"
+                },
+                "code": {
+                  "type": "string",
+                  "description": "Form type code (STRAIGHT, L, U, ISLAND)",
+                  "example": "L"
+                },
+                "nameTr": {
+                  "type": "string",
+                  "description": "Turkish display name",
+                  "example": "L Mutfak"
+                },
+                "coefficient": {
+                  "type": "string",
+                  "description": "Pricing coefficient (fixed 2 decimals)",
+                  "example": "1.15"
+                },
+                "isActive": {
+                  "type": "boolean",
+                  "description": "Whether option is currently available",
+                  "example": true
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "cmu9pojj0001gjrrp0678b8d4",
+              "code": "L",
+              "nameTr": "L Mutfak",
+              "coefficient": "1.15",
+              "isActive": true
+            }
+          ]
+        }
+      }
+    },
+    "GET /api/edge-types": {
+      "description": "List active edge type options with coefficients (ADR-014)",
+      "responses": {
+        "200": {
+          "description": "Array of active edge type options",
+          "contentType": "application/json",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "code", "nameTr", "coefficient", "isActive"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Database CUID",
+                  "example": "cmu9pojj2001jjrrps0l86qvb"
+                },
+                "code": {
+                  "type": "string",
+                  "description": "Edge type code (STRAIGHT, RADIUS, BEVEL, IRON)",
+                  "example": "RADIUS"
+                },
+                "nameTr": {
+                  "type": "string",
+                  "description": "Turkish display name",
+                  "example": "Radius Kenar"
+                },
+                "coefficient": {
+                  "type": "string",
+                  "description": "Pricing coefficient (fixed 2 decimals)",
+                  "example": "1.05"
+                },
+                "isActive": {
+                  "type": "boolean",
+                  "description": "Whether option is currently available",
+                  "example": true
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "cmu9pojj2001jjrrps0l86qvb",
+              "code": "RADIUS",
+              "nameTr": "Radius Kenar",
+              "coefficient": "1.05",
+              "isActive": true
+            }
+          ]
+        }
+      }
+    },
     "POST /api/pricing/quote": {
       "description": "Compute a pricing quote for a countertop configuration",
       "request": {
@@ -536,14 +692,22 @@
       }
     }
   },
-  "futureEndpoints": {
-    "note": "F2+ will need catalog endpoints for frontend to load available options",
+  "implementedF2": {
+    "note": "F2 Gate 1 catalog endpoints implemented (ADR-014)",
     "endpoints": [
-      "GET /api/catalog/stone-colors",
-      "GET /api/catalog/thicknesses",
-      "GET /api/catalog/form-types",
-      "GET /api/catalog/edge-types",
-      "GET /api/catalog/dealers"
+      "GET /api/thicknesses",
+      "GET /api/form-types",
+      "GET /api/edge-types"
+    ]
+  },
+  "futureEndpoints": {
+    "note": "F2+ additional catalog and admin endpoints",
+    "endpoints": [
+      "GET /api/stone-colors (with brand/type/collection filters)",
+      "GET /api/dealers",
+      "POST /admin/price-rules (ADMIN only, ADR-015)",
+      "PUT /admin/price-rules/:id (ADMIN only)",
+      "POST /admin/stones/import-csv (ADMIN only, ADR-016 atomic import)"
     ]
   }
 }

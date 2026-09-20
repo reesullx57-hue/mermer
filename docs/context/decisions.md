@@ -181,3 +181,92 @@ This document tracks key architectural decisions for the kitchen countertop conf
   }
 }
 ```
+
+---
+
+## ADR-014 — Catalog List Endpoints
+**Status:** Accepted (F2).
+
+**Decision:** Add `GET /api/thicknesses`, `GET /api/form-types`, `GET /api/edge-types` returning active rows with `id`, `code`/`cm`, `nameTr`, `coefficient` (as fixed decimal strings), `isActive`. Frontend must load IDs from these endpoints (no hardcoded seed IDs).
+
+**Rationale:** ADR-013 established that quote requests use database IDs. The frontend needs a way to discover available options and their IDs dynamically. Catalog endpoints provide the necessary data for building UI dropdowns and form validation.
+
+**Impact:**
+- Frontend can build dynamic configuration forms without hardcoding IDs
+- Coefficients returned as fixed-decimal strings for consistency with pricing contract
+- `isActive` field allows filtering in UI (only show active options)
+- Endpoints are read-only; no authentication required (public catalog data)
+- Admin CRUD for these entities comes in later F2 gates
+
+**Response Format:**
+```json
+[
+  {
+    "id": "cmu9pojiy001djrrp8x5dfbpi",
+    "cm": 3,
+    "nameTr": "3 cm",
+    "coefficient": "1.10",
+    "isActive": true
+  }
+]
+```
+
+---
+
+## ADR-015 — Admin RBAC
+**Status:** Accepted (F2).
+
+**Decision:** Only `Role.ADMIN` users may access `/admin/*` routes and mutating admin APIs. This is enforced via middleware and server-side guards. Layout and UI rendering are owned by the frontend; this ADR documents the authorization rule.
+
+**Rationale:** Admin operations (price rule management, stone catalog imports, configuration changes) carry business risk. Restricting these operations to admin users prevents unauthorized modifications and provides an audit trail.
+
+**Impact:**
+- All `/admin/*` routes require authentication + `Role.ADMIN` check
+- API endpoints for mutations (POST/PUT/DELETE on admin resources) must verify admin role
+- Unauthorized requests return 403 Forbidden
+- Frontend must check user role and hide/disable admin UI for non-admins (defense in depth)
+- F2+ implements session/JWT middleware with role checks
+
+**Authorization Flow:**
+1. User authenticates (session or JWT)
+2. Middleware extracts user from token
+3. Route/endpoint checks `user.role === 'ADMIN'`
+4. If not admin: return 403, else: proceed
+
+---
+
+## ADR-016 — CSV Import Atomic
+**Status:** Accepted (F2).
+
+**Decision:** Stone/StoneColor CSV import operations are atomic: one bad row causes the entire batch to roll back. Error reports include row number, field name, and validation failure reason.
+
+**Rationale:** Partial imports lead to inconsistent catalog state. If a CSV contains 100 rows and row 73 is invalid, importing rows 1-72 and stopping would leave the database in a half-updated state. Atomic imports ensure all-or-nothing: either the entire CSV is valid and imported, or nothing changes.
+
+**Impact:**
+- CSV import uses database transactions (Prisma `$transaction`)
+- Validation occurs before any writes (two-pass: validate all, then import all)
+- Error response lists all validation failures with specific row/field/reason
+- User can fix CSV and retry without worrying about duplicate imports
+- Idempotency: re-importing the same valid CSV (with same codes/IDs) should be safe (upsert strategy)
+
+**Error Response Format:**
+```json
+{
+  "error": {
+    "code": "CSV_VALIDATION_FAILED",
+    "message": "CSV validation failed",
+    "details": [
+      {
+        "row": 73,
+        "field": "m2Price",
+        "reason": "Must be a positive number"
+      },
+      {
+        "row": 89,
+        "field": "brandCode",
+        "reason": "Brand 'XYZ-999' not found"
+      }
+    ]
+  }
+}
+```
