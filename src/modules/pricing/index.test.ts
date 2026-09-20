@@ -115,11 +115,22 @@ describe('Pricing Module - Contract v1.0.0', () => {
           leg2: 180,
           depth: 65,
         },
-        sinkHoles: 1,
+        sink: {
+          type: 'undermount',
+          holes: 1,
+        },
         cooktopHole: true,
         install: true,
-        skirtingEnabled: false,
-        trimEnabled: false,
+        skirting: {
+          enabled: false,
+        },
+        trim: {
+          enabled: false,
+        },
+        panelled: false,
+        sideBox: {
+          enabled: false,
+        },
         address: {
           city: 'İstanbul',
           district: 'Kadıköy',
@@ -226,13 +237,21 @@ describe('Pricing Module - Contract v1.0.0', () => {
           leg2: 180,
           depth: 65,
         },
-        sinkHoles: 0,
+        sink: null,
         cooktopHole: false,
         install: false,
-        skirtingEnabled: true,
-        skirtingHeightCm: 10,
-        trimEnabled: true,
-        trimModel: 'standard',
+        skirting: {
+          enabled: true,
+          heightCm: 10,
+        },
+        trim: {
+          enabled: true,
+          model: 'standard',
+        },
+        panelled: false,
+        sideBox: {
+          enabled: false,
+        },
         // No address = no shipping
         // No dealerId = no dealer discount
       };
@@ -343,8 +362,12 @@ describe('Pricing Module - Contract v1.0.0', () => {
 
       const inputWithDealer: ConfigurationInput = {
         ...testInput,
-        skirtingEnabled: false,
-        trimEnabled: false,
+        skirting: {
+          enabled: false,
+        },
+        trim: {
+          enabled: false,
+        },
         dealerId: dealer.id,
       };
 
@@ -377,11 +400,19 @@ describe('Pricing Module - Contract v1.0.0', () => {
           length: 320,
           depth: 65,
         },
-        sinkHoles: 0,
+        sink: null,
         cooktopHole: false,
         install: false,
-        skirtingEnabled: false,
-        trimEnabled: false,
+        skirting: {
+          enabled: false,
+        },
+        trim: {
+          enabled: false,
+        },
+        panelled: false,
+        sideBox: {
+          enabled: false,
+        },
       };
 
       const snapshot = await computeQuote(straightInput);
@@ -404,11 +435,19 @@ describe('Pricing Module - Contract v1.0.0', () => {
           leg3: 200,
           depth: 65,
         },
-        sinkHoles: 0,
+        sink: null,
         cooktopHole: false,
         install: false,
-        skirtingEnabled: false,
-        trimEnabled: false,
+        skirting: {
+          enabled: false,
+        },
+        trim: {
+          enabled: false,
+        },
+        panelled: false,
+        sideBox: {
+          enabled: false,
+        },
       };
 
       const snapshot = await computeQuote(uInput);
@@ -430,11 +469,19 @@ describe('Pricing Module - Contract v1.0.0', () => {
           length: 320,
           depth: 65,
         },
-        sinkHoles: 0,
+        sink: null,
         cooktopHole: false,
         install: false,
-        skirtingEnabled: false,
-        trimEnabled: false,
+        skirting: {
+          enabled: false,
+        },
+        trim: {
+          enabled: false,
+        },
+        panelled: false,
+        sideBox: {
+          enabled: false,
+        },
       };
 
       const snapshot = await computeQuote(islandInput);
@@ -456,8 +503,12 @@ describe('Pricing Module - Contract v1.0.0', () => {
     it('handles city-wide shipping fallback with correct formatting', async () => {
       const inputCityWide: ConfigurationInput = {
         ...testInput,
-        skirtingEnabled: false,
-        trimEnabled: false,
+        skirting: {
+          enabled: false,
+        },
+        trim: {
+          enabled: false,
+        },
         address: {
           city: 'Ankara',
           district: '',
@@ -475,8 +526,12 @@ describe('Pricing Module - Contract v1.0.0', () => {
     it('omits shipping when no address provided', async () => {
       const inputNoShipping: ConfigurationInput = {
         ...testInput,
-        skirtingEnabled: false,
-        trimEnabled: false,
+        skirting: {
+          enabled: false,
+        },
+        trim: {
+          enabled: false,
+        },
         address: undefined,
       };
 
