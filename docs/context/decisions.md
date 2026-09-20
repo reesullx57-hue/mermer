@@ -357,22 +357,33 @@ const lastUpdatedAt = latestAudit?.createdAt;
 ## ADR-019 — Texture Upload Strategy
 **Status:** Accepted (F2 Gate 3).
 
-**Decision:** F2 implements local filesystem stub for stone texture uploads (`/uploads/textures/`). F3+ will add cloud storage adapter (R2/S3) with CDN integration. StoneColor.textureUrl stores the public URL or path.
+**Decision:** F2 implements local filesystem stub for stone texture uploads at `public/uploads/textures/`. F3+ will add cloud storage adapter (Cloudflare R2 or AWS S3) with CDN integration. StoneColor.textureUrl stores the public URL or relative path.
 
 **Rationale:**
 - F2 needs texture upload for stone catalog admin, but cloud storage integration is out of scope
-- Local filesystem sufficient for demo/testing
+- Local filesystem sufficient for demo/testing; Next.js serves `public/` as static assets
 - Adapter pattern allows seamless F3+ migration without API contract changes
 
-**Implementation:**
-- F2: POST /api/admin/stone-colors accepts optional texture file → save to `/uploads/textures/{id}.{ext}` → textureUrl = `/uploads/textures/{id}.{ext}`
-- F3+: Adapter uploads to R2/S3 → textureUrl = `https://cdn.example.com/textures/{id}.{ext}`
-- StoneColor.textureUrl is nullable string (URL or path)
+**F2 Implementation Details:**
+- **Storage path:** `public/uploads/textures/` (served at `/uploads/textures/`)
+- **Filename format:** `{stoneColorId}.{ext}` (e.g., `clx123abc.jpg`)
+- **Allowed MIME types:** `image/jpeg`, `image/png`, `image/webp`
+- **Max file size:** 5 MB
+- **Upload flow:** POST multipart/form-data to `/api/admin/stone-colors` or PATCH `/api/admin/stone-colors/[id]` with `texture` field
+- **Storage:** Write to filesystem, set `textureUrl = /uploads/textures/{id}.{ext}`
+- **Deletion:** Remove old file when updating texture or soft-deleting color
+
+**F3+ Cloud Storage Plan:**
+- **Provider:** Cloudflare R2 (S3-compatible, zero egress fees)
+- **CDN:** Cloudflare CDN for global delivery
+- **Upload flow:** Client POSTs to `/api/admin/stone-colors` → server uploads to R2 → returns `textureUrl = https://cdn.example.com/textures/{id}.{ext}`
+- **Migration:** Batch script to upload existing `public/uploads/textures/*` to R2, update DB textureUrl
+- **Adapter interface:** `TextureStorage` with `upload(file, id)`, `delete(url)`, `getPublicUrl(id)` methods
 
 **Impact:**
-- `/uploads/textures/` added to .gitignore
-- F2 deployment must serve `/uploads/` static files
-- F3 migration: batch upload existing textures to cloud, update textureUrl in DB
+- F2: `/uploads/textures/` added to `.gitignore`; deployment serves `public/` directory
+- F3: Zero code changes to API routes (adapter swaps filesystem for R2)
+- StoneColor.textureUrl always stores final public-facing URL/path
 
 ---
 
@@ -446,3 +457,36 @@ invalidateCatalogCache('stones'); // → ['stones:v1:all', 'pricing:v1:all']
 - Pricing module expands to `invalidateCatalogCache(type: 'stones' | 'dealers')`
 - Integration tests assert correct tag combinations for each mutation type
 - Next.js revalidateTag called for production; stub logs tags in F2
+
+---
+
+## ADR-023 — Stones Admin Entity Model (4-Entity CRUD)
+**Status:** Accepted (F2 Gate 3).
+
+**Decision:** Stones admin implements full 4-entity CRUD model: StoneBrand → StoneCollection → Stone → StoneColor. Each entity has list/create endpoints; Brand/Color additionally have update endpoints. Hierarchy is enforced via FK validation.
+
+**Entity hierarchy:**
+```
+StoneBrand (e.g., "Lamar", "NG Stone")
+  └─ StoneCollection (e.g., "Classic", "Modern") [optional]
+      └─ Stone (e.g., "QUARTZ-001", "GRANITE-002")
+          └─ StoneColor (e.g., "WHITE", "BLACK") [has m2Price, wastePercent, textureUrl]
+```
+
+**Rationale:**
+- Schema already defines 4 entities; admin UI needs CRUD for all
+- Collection is optional (stone.collectionId nullable) for flexibility
+- m2Price lives on StoneColor (not Stone) because same stone type can have different prices per color/finish
+- Full CRUD enables admin to manage entire catalog hierarchy without seed scripts
+
+**Implemented endpoints (F2 Gate 3):**
+- `GET/POST /api/admin/stone-brands` + `GET/PATCH /api/admin/stone-brands/[id]`
+- `GET/POST /api/admin/stone-collections` (filtered by brandId optional)
+- `GET/POST /api/admin/stones` (filtered by brandId/collectionId optional)
+- `GET/POST /api/admin/stone-colors` + `GET/PATCH /api/admin/stone-colors/[id]` (filtered by stoneId optional)
+
+**Impact:**
+- F2 admin can create: Brand → Collection → Stone → Color (with prices)
+- UI must enforce hierarchy: select brand before creating collection, select stone before creating color
+- AuditLog records all mutations across 4 entity types
+- Cache invalidation: all 4 entity mutations call `invalidateCatalogCache('stones')`
