@@ -242,7 +242,7 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
     unit: 'M2',
     quantity: billableAreaM2.toFixed(4),
     unitPrice: unitPrice,
-    lineTotal: stoneLineTotal.toString(),
+    lineTotal: stoneLineTotal.toFixed(2),
     sortOrder: sortOrder++,
   });
 
@@ -257,8 +257,8 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
       label: 'Eviye Deliği',
       unit: 'ADET',
       quantity: input.sinkHoles.toString(),
-      unitPrice: rules.sinkHoleFee,
-      lineTotal: sinkTotal.toString(),
+      unitPrice: new Decimal(rules.sinkHoleFee).toFixed(2),
+      lineTotal: sinkTotal.toFixed(2),
       sortOrder: sortOrder++,
     });
   }
@@ -270,8 +270,8 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
       label: 'Ocak Deliği',
       unit: 'ADET',
       quantity: '1',
-      unitPrice: rules.cooktopHoleFee,
-      lineTotal: rules.cooktopHoleFee,
+      unitPrice: new Decimal(rules.cooktopHoleFee).toFixed(2),
+      lineTotal: new Decimal(rules.cooktopHoleFee).toFixed(2),
       sortOrder: sortOrder++,
     });
   }
@@ -283,8 +283,8 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
       label: 'Montaj',
       unit: 'HIZMET',
       quantity: '1',
-      unitPrice: rules.installFee,
-      lineTotal: rules.installFee,
+      unitPrice: new Decimal(rules.installFee).toFixed(2),
+      lineTotal: new Decimal(rules.installFee).toFixed(2),
       sortOrder: sortOrder++,
     });
   }
@@ -302,8 +302,8 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
         label: `Sevkiyat - ${shippingZone.city}${shippingZone.district ? '/' + shippingZone.district : ''}`,
         unit: 'HIZMET',
         quantity: '1',
-        unitPrice: shippingZone.fee,
-        lineTotal: shippingZone.fee,
+        unitPrice: new Decimal(shippingZone.fee).toFixed(2),
+        lineTotal: new Decimal(shippingZone.fee).toFixed(2),
         sortOrder: sortOrder++,
       });
     }
@@ -352,22 +352,22 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
     }
   });
 
-  // Build pricing snapshot
+  // Build pricing snapshot with consistent decimal formatting
   const snapshot: PricingSnapshot = {
     contractVersion: '1.0.0',
     stoneColorId: catalog.stoneColor.id,
-    basePrice: catalog.stoneColor.m2Price,
+    basePrice: new Decimal(catalog.stoneColor.m2Price).toFixed(2),
     coefficients: {
-      thickness: catalog.thickness.coefficient,
-      formType: catalog.formType.coefficient,
-      edgeType: catalog.edgeType.coefficient,
+      thickness: new Decimal(catalog.thickness.coefficient).toFixed(2),
+      formType: new Decimal(catalog.formType.coefficient).toFixed(2),
+      edgeType: new Decimal(catalog.edgeType.coefficient).toFixed(2),
     },
     rawDimensions,
     computedAreaM2: computedAreaM2.toFixed(4),
     wastePercent: wastePercent.toFixed(4),
     billableAreaM2: billableAreaM2.toFixed(4),
     wasteSource,
-    vatRate: taxConfig.vatRate,
+    vatRate: new Decimal(taxConfig.vatRate).toFixed(4),
     appliedDiscounts,
     computedAt: new Date().toISOString(),
     lines,

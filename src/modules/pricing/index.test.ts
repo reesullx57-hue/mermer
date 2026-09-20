@@ -125,24 +125,24 @@ describe('Pricing Module - Contract v1.0.0', () => {
       };
     });
 
-    it('returns snapshot with contract v1.0.0 structure', async () => {
+    it('returns snapshot with contract v1.0.0 structure and exact formatting', async () => {
       const snapshot = await computeQuote(testInput);
 
       // Contract version
       expect(snapshot.contractVersion).toBe('1.0.0');
 
-      // Stone info
+      // Stone info with exact 2 decimal formatting
       expect(snapshot.stoneColorId).toBe(stoneColorId);
-      expect(snapshot.basePrice).toBe('1680');
+      expect(snapshot.basePrice).toBe('1680.00');
 
-      // Coefficients
+      // Coefficients with exact 2 decimal formatting
       expect(snapshot.coefficients).toEqual({
-        thickness: '1.1',
+        thickness: '1.10',
         formType: '1.15',
         edgeType: '1.05',
       });
 
-      // Geometry
+      // Geometry with exact 4 decimal formatting
       expect(snapshot.rawDimensions).toEqual({
         leg1: 320,
         leg2: 180,
@@ -153,25 +153,34 @@ describe('Pricing Module - Contract v1.0.0', () => {
       expect(snapshot.billableAreaM2).toBe('2.9689');
       expect(snapshot.wasteSource).toBe('global');
 
-      // Tax
-      expect(snapshot.vatRate).toBe('0.2');
+      // Tax with exact 4 decimal formatting
+      expect(snapshot.vatRate).toBe('0.2000');
 
-      // Discounts
+      // Discounts - always present (empty array when no dealer)
+      expect(Array.isArray(snapshot.appliedDiscounts)).toBe(true);
       expect(snapshot.appliedDiscounts).toEqual([]);
       expect(snapshot.dealerDiscount).toBe('0.00');
       expect(snapshot.promoDiscount).toBe('0.00');
 
-      // Timestamp
+      // Timestamp - always present
       expect(snapshot.computedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(snapshot.computedAt).toMatch(/Z$/);
 
-      // Lines
+      // Lines - verify formatting
       expect(Array.isArray(snapshot.lines)).toBe(true);
       expect(snapshot.lines.length).toBeGreaterThan(0);
+      
+      // Check stone line has correct formatting
+      const stoneLine = snapshot.lines.find(l => l.code === 'STONE_M2');
+      expect(stoneLine).toBeDefined();
+      expect(stoneLine!.unitPrice).toMatch(/^\d+\.\d{2}$/);
+      expect(stoneLine!.lineTotal).toMatch(/^\d+\.\d{2}$/);
+      expect(stoneLine!.quantity).toMatch(/^\d+\.\d{4}$/);
 
-      // Totals
-      expect(snapshot.subtotalExVat).toBeDefined();
-      expect(snapshot.vatAmount).toBeDefined();
-      expect(snapshot.totalInclVat).toBeDefined();
+      // Totals with exact 2 decimal formatting
+      expect(snapshot.subtotalExVat).toMatch(/^\d+\.\d{2}$/);
+      expect(snapshot.vatAmount).toMatch(/^\d+\.\d{2}$/);
+      expect(snapshot.totalInclVat).toMatch(/^\d+\.\d{2}$/);
     });
 
     it('L golden: unitPrice 2231.46 and STONE_M2 line 6624.98', async () => {
@@ -191,7 +200,7 @@ describe('Pricing Module - Contract v1.0.0', () => {
       expect(stoneLine!.lineTotal).toBe('6624.98');
     });
 
-    it('includes all requested service lines', async () => {
+    it('includes all requested service lines with correct formatting', async () => {
       const snapshot = await computeQuote(testInput);
 
       const lineCodes = snapshot.lines.map((line) => line.code);
@@ -201,6 +210,12 @@ describe('Pricing Module - Contract v1.0.0', () => {
       expect(lineCodes).toContain('COOKTOP_HOLE');
       expect(lineCodes).toContain('INSTALL');
       expect(lineCodes).toContain('SHIPPING');
+
+      // Verify all lines have correct money formatting (2 decimals)
+      snapshot.lines.forEach((line) => {
+        expect(line.unitPrice).toMatch(/^\d+\.\d{2}$/);
+        expect(line.lineTotal).toMatch(/^\d+\.\d{2}$/);
+      });
     });
 
     it('calculates subtotal correctly', async () => {
@@ -241,7 +256,7 @@ describe('Pricing Module - Contract v1.0.0', () => {
       expect(snapshot.totalInclVat).toBe(expectedTotal.toFixed(2));
     });
 
-    it('includes dealer discount when dealerId provided', async () => {
+    it('includes dealer discount when dealerId provided with correct formatting', async () => {
       // Find a dealer
       const dealer = await prisma.dealer.findFirst({
         where: { code: 'DLR-001' },
@@ -258,12 +273,13 @@ describe('Pricing Module - Contract v1.0.0', () => {
 
       const snapshot = await computeQuote(inputWithDealer);
 
-      // Should have dealer discount
+      // Should have dealer discount with correct formatting
       expect(snapshot.appliedDiscounts.length).toBe(1);
       expect(snapshot.appliedDiscounts[0].type).toBe('dealer');
       expect(snapshot.appliedDiscounts[0].rate).toBe('0.1');
+      expect(snapshot.appliedDiscounts[0].amount).toMatch(/^\d+\.\d{2}$/);
 
-      // Discount should be 10% of subtotal
+      // Discount should be 10% of subtotal with 2 decimal formatting
       const expectedDiscount = new Decimal(snapshot.subtotalExVat)
         .mul('0.1')
         .toDecimalPlaces(2);
@@ -344,16 +360,17 @@ describe('Pricing Module - Contract v1.0.0', () => {
       expect(snapshot.billableAreaM2).toBe('2.1840');
     });
 
-    it('handles district-specific shipping', async () => {
+    it('handles district-specific shipping with correct formatting', async () => {
       const snapshot = await computeQuote(testInput);
 
       const shippingLine = snapshot.lines.find((line) => line.code === 'SHIPPING');
       expect(shippingLine).toBeDefined();
       expect(shippingLine!.label).toContain('İstanbul/Kadıköy');
-      expect(shippingLine!.lineTotal).toBe('400'); // Kadıköy specific rate
+      expect(shippingLine!.lineTotal).toBe('400.00'); // Kadıköy specific rate with 2 decimals
+      expect(shippingLine!.unitPrice).toBe('400.00');
     });
 
-    it('handles city-wide shipping fallback', async () => {
+    it('handles city-wide shipping fallback with correct formatting', async () => {
       const inputCityWide: ConfigurationInput = {
         ...testInput,
         address: {
@@ -366,7 +383,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
 
       const shippingLine = snapshot.lines.find((line) => line.code === 'SHIPPING');
       expect(shippingLine).toBeDefined();
-      expect(shippingLine!.lineTotal).toBe('500'); // Ankara city-wide rate
+      expect(shippingLine!.lineTotal).toBe('500.00'); // Ankara city-wide rate with 2 decimals
+      expect(shippingLine!.unitPrice).toBe('500.00');
     });
 
     it('omits shipping when no address provided', async () => {
