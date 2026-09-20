@@ -13,6 +13,45 @@ export interface StoneBrand {
   };
 }
 
+export interface StoneCollection {
+  id: string;
+  brandId: string;
+  code: string;
+  nameTr: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  brand?: {
+    code: string;
+    nameTr: string;
+  };
+  _count?: {
+    stones: number;
+  };
+}
+
+export interface Stone {
+  id: string;
+  brandId: string;
+  collectionId: string | null;
+  code: string;
+  nameTr: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  brand?: {
+    code: string;
+    nameTr: string;
+  };
+  collection?: {
+    code: string;
+    nameTr: string;
+  } | null;
+  _count?: {
+    colors: number;
+  };
+}
+
 export interface StoneColor {
   id: string;
   stoneId: string;
@@ -46,6 +85,21 @@ export interface UpdateStoneBrandRequest {
   isActive?: boolean;
 }
 
+export interface CreateStoneCollectionRequest {
+  brandId: string;
+  code: string;
+  nameTr: string;
+  isActive?: boolean;
+}
+
+export interface CreateStoneRequest {
+  brandId: string;
+  collectionId?: string | null;
+  code: string;
+  nameTr: string;
+  isActive?: boolean;
+}
+
 export interface CreateStoneColorRequest {
   stoneId: string;
   code: string;
@@ -72,6 +126,22 @@ export interface BrandsResponse {
 
 export interface BrandResponse {
   brand: StoneBrand;
+}
+
+export interface CollectionsResponse {
+  collections: StoneCollection[];
+}
+
+export interface CollectionResponse {
+  collection: StoneCollection;
+}
+
+export interface StonesResponse {
+  stones: Stone[];
+}
+
+export interface StoneResponse {
+  stone: Stone;
 }
 
 export interface ColorsResponse {

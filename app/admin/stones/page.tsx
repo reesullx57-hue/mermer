@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Gem } from 'lucide-react';
 import { ToastContainer } from '@/components/Toast';
 import StoneBrandsTab from './StoneBrandsTab';
+import StoneCollectionsTab from './StoneCollectionsTab';
+import StonesTab from './StonesTab';
 import StoneColorsTab from './StoneColorsTab';
 
-type TabId = 'brands' | 'colors';
+type TabId = 'brands' | 'collections' | 'stones' | 'colors';
 
 interface Tab {
   id: TabId;
@@ -15,6 +17,8 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'brands', label: 'Markalar' },
+  { id: 'collections', label: 'Koleksiyonlar' },
+  { id: 'stones', label: 'Taşlar' },
   { id: 'colors', label: 'Renkler' },
 ];
 
@@ -31,7 +35,7 @@ export default function StonesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Taş Kataloğu Yönetimi</h1>
         </div>
         <p className="text-gray-600">
-          Taş markaları ve renklerini yönetin
+          Taş markaları, koleksiyonlar, taşlar ve renkleri yönetin (ADR-023)
         </p>
       </div>
 
@@ -57,6 +61,8 @@ export default function StonesPage() {
       {/* Tab Content */}
       <div>
         {activeTab === 'brands' && <StoneBrandsTab />}
+        {activeTab === 'collections' && <StoneCollectionsTab />}
+        {activeTab === 'stones' && <StonesTab />}
         {activeTab === 'colors' && <StoneColorsTab />}
       </div>
     </div>

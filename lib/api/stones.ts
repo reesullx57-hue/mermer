@@ -1,12 +1,20 @@
 import type {
   StoneBrand,
+  StoneCollection,
+  Stone,
   StoneColor,
   CreateStoneBrandRequest,
   UpdateStoneBrandRequest,
+  CreateStoneCollectionRequest,
+  CreateStoneRequest,
   CreateStoneColorRequest,
   UpdateStoneColorRequest,
   BrandsResponse,
   BrandResponse,
+  CollectionsResponse,
+  CollectionResponse,
+  StonesResponse,
+  StoneResponse,
   ColorsResponse,
   ColorResponse,
   ApiError,
@@ -71,18 +79,6 @@ export async function fetchStoneBrands(includeInactive = false): Promise<StoneBr
   return data.brands;
 }
 
-export async function fetchStoneBrand(id: string): Promise<StoneBrand> {
-  const response = await fetch(`/api/admin/stone-brands/${id}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await handleResponse<BrandResponse>(response);
-  return data.brand;
-}
-
 export async function createStoneBrand(
   data: CreateStoneBrandRequest
 ): Promise<StoneBrand> {
@@ -127,6 +123,75 @@ export async function deleteStoneBrand(id: string): Promise<void> {
   }
 }
 
+// Stone Collections (PE API)
+export async function fetchStoneCollections(brandId?: string, includeInactive = false): Promise<StoneCollection[]> {
+  const params = new URLSearchParams();
+  if (includeInactive) params.set('all', 'true');
+  if (brandId) params.set('brandId', brandId);
+  
+  const url = `/api/admin/stone-collections${params.toString() ? `?${params.toString()}` : ''}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await handleResponse<CollectionsResponse>(response);
+  return data.collections;
+}
+
+export async function createStoneCollection(
+  data: CreateStoneCollectionRequest
+): Promise<StoneCollection> {
+  const response = await fetch('/api/admin/stone-collections', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await handleResponse<CollectionResponse>(response);
+  return result.collection;
+}
+
+// Stones (PE API)
+export async function fetchStones(brandId?: string, collectionId?: string, includeInactive = false): Promise<Stone[]> {
+  const params = new URLSearchParams();
+  if (includeInactive) params.set('all', 'true');
+  if (brandId) params.set('brandId', brandId);
+  if (collectionId) params.set('collectionId', collectionId);
+  
+  const url = `/api/admin/stones${params.toString() ? `?${params.toString()}` : ''}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await handleResponse<StonesResponse>(response);
+  return data.stones;
+}
+
+export async function createStone(
+  data: CreateStoneRequest
+): Promise<Stone> {
+  const response = await fetch('/api/admin/stones', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await handleResponse<StoneResponse>(response);
+  return result.stone;
+}
+
 // Stone Colors (PE API)
 export async function fetchStoneColors(stoneId?: string, includeInactive = false): Promise<StoneColor[]> {
   const params = new URLSearchParams();
@@ -144,18 +209,6 @@ export async function fetchStoneColors(stoneId?: string, includeInactive = false
 
   const data = await handleResponse<ColorsResponse>(response);
   return data.colors;
-}
-
-export async function fetchStoneColor(id: string): Promise<StoneColor> {
-  const response = await fetch(`/api/admin/stone-colors/${id}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await handleResponse<ColorResponse>(response);
-  return data.color;
 }
 
 export async function createStoneColor(
