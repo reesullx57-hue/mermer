@@ -99,47 +99,16 @@ describe('Pricing Cache Invalidation (F2 Gate 2+)', () => {
     await invalidatePricingCache();
   });
 
-  it.skip('preserves historical quote snapshots after rule change', async () => {
-    // Step 1: Save quote with SINK_HOLE = 300
-    const snapshot1 = await computeQuote(testInput);
-    const savedQuote = await prisma.quote.create({
-      data: {
-        userId: 'test-user-cache-invalidation',
-        configurationJson: testInput as any,
-        pricingSnapshot: snapshot1 as any,
-        totalInclVat: new Decimal(snapshot1.totalInclVat),
-      },
-    });
-
-    // Step 2: Update SINK_HOLE to 400
-    await prisma.priceRule.update({
-      where: { code: 'SINK_HOLE' },
-      data: { value: 400 },
-    });
-    await invalidatePricingCache();
-
-    // Step 3: Verify saved quote snapshot unchanged (immutable)
-    const fetchedQuote = await prisma.quote.findUnique({
-      where: { id: savedQuote.id },
-    });
-    const oldSinkLine = (fetchedQuote!.pricingSnapshot as any).lines.find(
-      (l: any) => l.code === 'SINK_HOLE'
-    );
-    expect(oldSinkLine.unitPrice).toBe('300.00'); // Historical snapshot preserved
-
-    // Step 4: New quote computation uses updated price
-    const quote2 = await computeQuote(testInput);
-    const newSinkLine = quote2.lines.find((l) => l.code === 'SINK_HOLE');
-    expect(newSinkLine?.unitPrice).toBe('400.00');
-
-    // Cleanup
-    await prisma.quote.delete({ where: { id: savedQuote.id } });
-    await prisma.priceRule.update({
-      where: { code: 'SINK_HOLE' },
-      data: { value: 300 },
-    });
-    await invalidatePricingCache();
-  });
+  // Test stub for quote persistence + snapshot immutability
+  // Skipped: Quote model requires configurationId (foreign key to Configuration table)
+  // which doesn't exist yet. Full implementation in F2 Gate 3.
+  //
+  // Test plan:
+  // 1. Save quote with SINK_HOLE = 300 in pricingSnapshot
+  // 2. Update SINK_HOLE rule to 400 + invalidate cache
+  // 3. Verify saved quote's pricingSnapshot.lines still contains unitPrice "300.00"
+  // 4. Verify new computeQuote() returns unitPrice "400.00"
+  // 5. Assert: historical snapshots are immutable; new quotes use current rules
 
   afterAll(async () => {
     await prisma.$disconnect();
