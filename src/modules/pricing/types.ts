@@ -46,6 +46,8 @@ export interface PricingRules {
   sinkHoleFee: string;
   cooktopHoleFee: string;
   installFee: string;
+  skirtingPricePerMeter: string;
+  trimPricePerMeter: string;
   wasteDefaultPercent: string;
   minAreaM2: string;
   minOrderAmount: string;

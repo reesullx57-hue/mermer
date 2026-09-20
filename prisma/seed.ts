@@ -444,6 +444,24 @@ async function main() {
     }),
     prisma.priceRule.create({
       data: {
+        code: 'SKIRTING',
+        nameTr: 'Süpürgelik',
+        value: 150.00,
+        unit: 'TRY_PER_METER',
+        isActive: true,
+      },
+    }),
+    prisma.priceRule.create({
+      data: {
+        code: 'TRIM',
+        nameTr: 'Profil',
+        value: 100.00,
+        unit: 'TRY_PER_METER',
+        isActive: true,
+      },
+    }),
+    prisma.priceRule.create({
+      data: {
         code: 'WASTE_DEFAULT_PERCENT',
         nameTr: 'Varsayılan Fire Oranı',
         value: 0.05,
@@ -558,7 +576,7 @@ async function main() {
   console.log('  - Thickness options: 3');
   console.log('  - Form types: 4');
   console.log('  - Edge types: 4');
-  console.log('  - Price rules: 6 (no VAT)');
+  console.log('  - Price rules: 8 (no VAT, includes skirting & trim)');
   console.log('  - Tax config: 1 (VAT_TR: 20%)');
   console.log('  - Shipping zones: 4');
   console.log('  - Accessories: 2');

@@ -52,6 +52,10 @@ export const ConfigurationInputSchema = z.object({
   sinkHoles: z.number().int().min(0).default(0),
   cooktopHole: z.boolean().default(false),
   install: z.boolean().default(false),
+  skirtingEnabled: z.boolean().default(false),
+  skirtingHeightCm: z.number().positive().optional(),
+  trimEnabled: z.boolean().default(false),
+  trimModel: z.string().optional(),
   address: AddressSchema.optional(),
   dealerId: z.string().cuid().optional(),
 });

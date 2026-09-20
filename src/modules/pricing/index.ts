@@ -35,6 +35,8 @@ export async function loadRules(): Promise<PricingRules> {
     sinkHoleFee: ruleMap.get('SINK_HOLE') || '300',
     cooktopHoleFee: ruleMap.get('COOKTOP_HOLE') || '350',
     installFee: ruleMap.get('INSTALL') || '500',
+    skirtingPricePerMeter: ruleMap.get('SKIRTING') || '150',
+    trimPricePerMeter: ruleMap.get('TRIM') || '100',
     wasteDefaultPercent: ruleMap.get('WASTE_DEFAULT_PERCENT') || '0.05',
     minAreaM2: ruleMap.get('MIN_AREA_M2') || '1.0',
     minOrderAmount: ruleMap.get('MIN_ORDER_AMOUNT') || '5000',
@@ -287,6 +289,66 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
       lineTotal: new Decimal(rules.installFee).toFixed(2),
       sortOrder: sortOrder++,
     });
+  }
+
+  // Skirting (based on leg1 length in meters for L form)
+  if (input.skirtingEnabled) {
+    // Calculate skirting length in meters
+    // For L form: use leg1 (the main counter length)
+    // For STRAIGHT/ISLAND: use length
+    // For U form: use leg1
+    let skirtingLengthM = 0;
+    if ('leg1' in input.dimensions) {
+      skirtingLengthM = input.dimensions.leg1 / 100; // cm to meters
+    } else if ('length' in input.dimensions) {
+      skirtingLengthM = input.dimensions.length / 100; // cm to meters
+    }
+
+    if (skirtingLengthM > 0) {
+      const skirtingTotal = new Decimal(rules.skirtingPricePerMeter)
+        .mul(skirtingLengthM)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+      lines.push({
+        code: 'SKIRTING',
+        label: 'Süpürgelik',
+        unit: 'METRE',
+        quantity: skirtingLengthM.toFixed(2),
+        unitPrice: new Decimal(rules.skirtingPricePerMeter).toFixed(2),
+        lineTotal: skirtingTotal.toFixed(2),
+        sortOrder: sortOrder++,
+      });
+    }
+  }
+
+  // Trim (based on leg1 length in meters for L form)
+  if (input.trimEnabled) {
+    // Calculate trim length in meters
+    // For L form: use leg1 (the main counter length)
+    // For STRAIGHT/ISLAND: use length
+    // For U form: use leg1
+    let trimLengthM = 0;
+    if ('leg1' in input.dimensions) {
+      trimLengthM = input.dimensions.leg1 / 100; // cm to meters
+    } else if ('length' in input.dimensions) {
+      trimLengthM = input.dimensions.length / 100; // cm to meters
+    }
+
+    if (trimLengthM > 0) {
+      const trimTotal = new Decimal(rules.trimPricePerMeter)
+        .mul(trimLengthM)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+      lines.push({
+        code: 'TRIM',
+        label: 'Profil',
+        unit: 'METRE',
+        quantity: trimLengthM.toFixed(2),
+        unitPrice: new Decimal(rules.trimPricePerMeter).toFixed(2),
+        lineTotal: trimTotal.toFixed(2),
+        sortOrder: sortOrder++,
+      });
+    }
   }
 
   // Shipping

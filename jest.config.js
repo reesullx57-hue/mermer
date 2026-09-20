@@ -12,5 +12,8 @@ module.exports = {
     '!src/**/*.spec.ts',
   ],
   moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
   verbose: true,
 };

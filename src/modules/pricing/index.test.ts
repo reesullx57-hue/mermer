@@ -118,6 +118,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
         sinkHoles: 1,
         cooktopHole: true,
         install: true,
+        skirtingEnabled: false,
+        trimEnabled: false,
         address: {
           city: 'İstanbul',
           district: 'Kadıköy',
@@ -183,7 +185,7 @@ describe('Pricing Module - Contract v1.0.0', () => {
       expect(snapshot.totalInclVat).toMatch(/^\d+\.\d{2}$/);
     });
 
-    it('L golden: unitPrice 2231.46 and STONE_M2 line 6624.98', async () => {
+    it('Golden A: L form with services, no dealer → 9809.98 TRY', async () => {
       const snapshot = await computeQuote(testInput);
 
       // Find stone line
@@ -198,6 +200,79 @@ describe('Pricing Module - Contract v1.0.0', () => {
 
       // Check line total: 2231.46 × 2.9689 = 6624.98
       expect(stoneLine!.lineTotal).toBe('6624.98');
+
+      // Verify service lines
+      expect(snapshot.lines.find(l => l.code === 'SINK_HOLE')).toBeDefined();
+      expect(snapshot.lines.find(l => l.code === 'COOKTOP_HOLE')).toBeDefined();
+      expect(snapshot.lines.find(l => l.code === 'INSTALL')).toBeDefined();
+      expect(snapshot.lines.find(l => l.code === 'SHIPPING')).toBeDefined();
+
+      // Verify totals
+      expect(snapshot.subtotalExVat).toBe('8174.98');
+      expect(snapshot.vatAmount).toBe('1635.00');
+      expect(snapshot.totalInclVat).toBe('9809.98');
+      expect(snapshot.appliedDiscounts).toEqual([]);
+    });
+
+    it('Golden B: L form with skirting+trim, no services, no dealer → 8909.98 TRY', async () => {
+      const goldenBInput: ConfigurationInput = {
+        stoneColorId,
+        thicknessId,
+        formTypeId,
+        edgeTypeId,
+        dimensions: {
+          formType: 'L',
+          leg1: 320,
+          leg2: 180,
+          depth: 65,
+        },
+        sinkHoles: 0,
+        cooktopHole: false,
+        install: false,
+        skirtingEnabled: true,
+        skirtingHeightCm: 10,
+        trimEnabled: true,
+        trimModel: 'standard',
+        // No address = no shipping
+        // No dealerId = no dealer discount
+      };
+
+      const snapshot = await computeQuote(goldenBInput);
+
+      // Stone line
+      const stoneLine = snapshot.lines.find((line) => line.code === 'STONE_M2');
+      expect(stoneLine).toBeDefined();
+      expect(stoneLine!.unitPrice).toBe('2231.46');
+      expect(stoneLine!.quantity).toBe('2.9689');
+      expect(stoneLine!.lineTotal).toBe('6624.98');
+
+      // Skirting line: 3.20 meters × 150.00 = 480.00
+      const skirtingLine = snapshot.lines.find((line) => line.code === 'SKIRTING');
+      expect(skirtingLine).toBeDefined();
+      expect(skirtingLine!.quantity).toBe('3.20'); // leg1 320cm / 100 = 3.20m
+      expect(skirtingLine!.unitPrice).toBe('150.00');
+      expect(skirtingLine!.lineTotal).toBe('480.00');
+
+      // Trim line: 3.20 meters × 100.00 = 320.00
+      const trimLine = snapshot.lines.find((line) => line.code === 'TRIM');
+      expect(trimLine).toBeDefined();
+      expect(trimLine!.quantity).toBe('3.20'); // leg1 320cm / 100 = 3.20m
+      expect(trimLine!.unitPrice).toBe('100.00');
+      expect(trimLine!.lineTotal).toBe('320.00');
+
+      // No service lines
+      expect(snapshot.lines.find(l => l.code === 'SINK_HOLE')).toBeUndefined();
+      expect(snapshot.lines.find(l => l.code === 'COOKTOP_HOLE')).toBeUndefined();
+      expect(snapshot.lines.find(l => l.code === 'INSTALL')).toBeUndefined();
+      expect(snapshot.lines.find(l => l.code === 'SHIPPING')).toBeUndefined();
+
+      // Verify totals: 6624.98 + 480.00 + 320.00 = 7424.98
+      expect(snapshot.subtotalExVat).toBe('7424.98');
+      // VAT: 7424.98 × 0.20 = 1484.996 → ROUND_HALF_UP = 1485.00
+      expect(snapshot.vatAmount).toBe('1485.00');
+      // Total: 7424.98 + 1485.00 = 8909.98
+      expect(snapshot.totalInclVat).toBe('8909.98');
+      expect(snapshot.appliedDiscounts).toEqual([]);
     });
 
     it('includes all requested service lines with correct formatting', async () => {
@@ -268,6 +343,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
 
       const inputWithDealer: ConfigurationInput = {
         ...testInput,
+        skirtingEnabled: false,
+        trimEnabled: false,
         dealerId: dealer.id,
       };
 
@@ -303,6 +380,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
         sinkHoles: 0,
         cooktopHole: false,
         install: false,
+        skirtingEnabled: false,
+        trimEnabled: false,
       };
 
       const snapshot = await computeQuote(straightInput);
@@ -328,6 +407,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
         sinkHoles: 0,
         cooktopHole: false,
         install: false,
+        skirtingEnabled: false,
+        trimEnabled: false,
       };
 
       const snapshot = await computeQuote(uInput);
@@ -352,6 +433,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
         sinkHoles: 0,
         cooktopHole: false,
         install: false,
+        skirtingEnabled: false,
+        trimEnabled: false,
       };
 
       const snapshot = await computeQuote(islandInput);
@@ -373,6 +456,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
     it('handles city-wide shipping fallback with correct formatting', async () => {
       const inputCityWide: ConfigurationInput = {
         ...testInput,
+        skirtingEnabled: false,
+        trimEnabled: false,
         address: {
           city: 'Ankara',
           district: '',
@@ -390,6 +475,8 @@ describe('Pricing Module - Contract v1.0.0', () => {
     it('omits shipping when no address provided', async () => {
       const inputNoShipping: ConfigurationInput = {
         ...testInput,
+        skirtingEnabled: false,
+        trimEnabled: false,
         address: undefined,
       };
 
