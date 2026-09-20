@@ -13,16 +13,21 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["id", "cm", "nameTr", "coefficient", "isActive"],
+              "required": ["id", "code", "nameTr", "coefficient", "isActive"],
               "properties": {
                 "id": {
                   "type": "string",
                   "description": "Database CUID",
                   "example": "cmu9pojiy001djrrp8x5dfbpi"
                 },
+                "code": {
+                  "type": "string",
+                  "description": "Thickness code (string representation of cm for FE consistency)",
+                  "example": "3"
+                },
                 "cm": {
                   "type": "integer",
-                  "description": "Thickness in centimeters",
+                  "description": "Thickness in centimeters (numeric for convenience)",
                   "example": 3
                 },
                 "nameTr": {
@@ -46,6 +51,7 @@
           "example": [
             {
               "id": "cmu9pojiy001djrrp8x5dfbpi",
+              "code": "3",
               "cm": 3,
               "nameTr": "3 cm",
               "coefficient": "1.10",

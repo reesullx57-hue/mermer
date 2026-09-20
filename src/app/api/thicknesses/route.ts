@@ -19,7 +19,8 @@ export async function GET() {
 
     const response = thicknesses.map((t) => ({
       id: t.id,
-      cm: t.cm,
+      code: String(t.cm), // "2", "3", "4" for FE consistency
+      cm: t.cm, // Keep numeric value for convenience
       nameTr: t.nameTr,
       coefficient: new Decimal(t.coefficient).toFixed(2),
       isActive: t.isActive,
