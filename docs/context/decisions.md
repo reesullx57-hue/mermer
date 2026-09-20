@@ -270,3 +270,48 @@ This document tracks key architectural decisions for the kitchen countertop conf
   }
 }
 ```
+
+---
+
+## ADR-017 — Admin Authorization Response Patterns
+**Status:** Accepted (F2 Gate 2).
+
+**Decision:** 
+- **Pages** (`/admin/*`): Unauthorized users receive HTTP 307 redirect to `/403` (frontend-rendered forbidden page). Middleware intercepts and redirects before page render.
+- **APIs** (`/api/admin/*`): Unauthorized users receive HTTP 403 JSON response with structured error. APIs never redirect.
+
+**Error Format (APIs):**
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Admin role required"
+  }
+}
+```
+
+**Rationale:** 
+- Pages need user-friendly error screens; redirects to `/403` provide consistent UX
+- APIs must return machine-readable errors; redirects break API clients and CORS
+- Separation allows page middleware and API guards to use appropriate patterns
+
+**Implementation:**
+```typescript
+// Page middleware (middleware.ts)
+if (!isAdmin && pathname.startsWith('/admin')) {
+  return NextResponse.redirect(new URL('/403', request.url));
+}
+
+// API route handler
+if (!isAdmin) {
+  return NextResponse.json(
+    { error: { code: 'FORBIDDEN', message: 'Admin role required' } },
+    { status: 403 }
+  );
+}
+```
+
+**Impact:**
+- Frontend implements `/403` page (static or simple component)
+- API clients handle 403 status + parse error JSON
+- Consistent error handling across admin surfaces
