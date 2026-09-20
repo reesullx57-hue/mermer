@@ -51,11 +51,22 @@ describe('POST /api/pricing/quote', () => {
         leg2: 180,
         depth: 65,
       },
-      sinkHoles: 1,
+      sink: {
+        type: 'undermount',
+        holes: 1,
+      },
       cooktopHole: true,
       install: true,
-      skirtingEnabled: false,
-      trimEnabled: false,
+      skirting: {
+        enabled: false,
+      },
+      trim: {
+        enabled: false,
+      },
+      panelled: false,
+      sideBox: {
+        enabled: false,
+      },
       address: {
         city: 'İstanbul',
         district: 'Kadıköy',
@@ -107,13 +118,21 @@ describe('POST /api/pricing/quote', () => {
         leg2: 180,
         depth: 65,
       },
-      sinkHoles: 0,
+      sink: null,
       cooktopHole: false,
       install: false,
-      skirtingEnabled: true,
-      skirtingHeightCm: 10,
-      trimEnabled: true,
-      trimModel: 'standard',
+      skirting: {
+        enabled: true,
+        heightCm: 10,
+      },
+      trim: {
+        enabled: true,
+        model: 'standard',
+      },
+      panelled: false,
+      sideBox: {
+        enabled: false,
+      },
     };
 
     const request = new NextRequest('http://localhost:3000/api/pricing/quote', {
@@ -184,11 +203,19 @@ describe('POST /api/pricing/quote', () => {
         leg2: 180,
         depth: 65,
       },
-      sinkHoles: 0,
+      sink: null,
       cooktopHole: false,
       install: false,
-      skirtingEnabled: false,
-      trimEnabled: false,
+      skirting: {
+        enabled: false,
+      },
+      trim: {
+        enabled: false,
+      },
+      panelled: false,
+      sideBox: {
+        enabled: false,
+      },
     };
 
     const request = new NextRequest('http://localhost:3000/api/pricing/quote', {

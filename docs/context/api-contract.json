@@ -1,0 +1,549 @@
+{
+  "apiVersion": "1.0.0",
+  "lastUpdated": "2026-09-20",
+  "notes": "Contract v1.0.0 with database ID references (see ADR-013). Frontend must load catalog IDs before making quote requests.",
+  "endpoints": {
+    "POST /api/pricing/quote": {
+      "description": "Compute a pricing quote for a countertop configuration",
+      "request": {
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "stoneColorId",
+            "thicknessId",
+            "formTypeId",
+            "edgeTypeId",
+            "dimensions"
+          ],
+          "properties": {
+            "stoneColorId": {
+              "type": "string",
+              "description": "Database CUID of the stone color (references StoneColor table)",
+              "example": "cmu9pojis000vjrrp5epidwok"
+            },
+            "thicknessId": {
+              "type": "string",
+              "description": "Database CUID of the thickness (references Thickness table)",
+              "example": "cmu9pojiy001djrrp8x5dfbpi"
+            },
+            "formTypeId": {
+              "type": "string",
+              "description": "Database CUID of the form type (references FormType table)",
+              "example": "cmu9pojj0001gjrrp0678b8d4"
+            },
+            "edgeTypeId": {
+              "type": "string",
+              "description": "Database CUID of the edge type (references EdgeType table)",
+              "example": "cmu9pojj2001jjrrps0l86qvb"
+            },
+            "dimensions": {
+              "description": "Dimensions in centimeters. Shape varies by form type (discriminated union).",
+              "oneOf": [
+                {
+                  "type": "object",
+                  "description": "STRAIGHT form dimensions",
+                  "required": ["formType", "length", "depth"],
+                  "properties": {
+                    "formType": {
+                      "type": "string",
+                      "enum": ["STRAIGHT"]
+                    },
+                    "length": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 320
+                    },
+                    "depth": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 65
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "description": "L form dimensions",
+                  "required": ["formType", "leg1", "leg2", "depth"],
+                  "properties": {
+                    "formType": {
+                      "type": "string",
+                      "enum": ["L"]
+                    },
+                    "leg1": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 320
+                    },
+                    "leg2": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 180
+                    },
+                    "depth": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 65
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "description": "U form dimensions",
+                  "required": ["formType", "leg1", "leg2", "leg3", "depth"],
+                  "properties": {
+                    "formType": {
+                      "type": "string",
+                      "enum": ["U"]
+                    },
+                    "leg1": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 320
+                    },
+                    "leg2": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 180
+                    },
+                    "leg3": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 200
+                    },
+                    "depth": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 65
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "description": "ISLAND form dimensions",
+                  "required": ["formType", "length", "depth"],
+                  "properties": {
+                    "formType": {
+                      "type": "string",
+                      "enum": ["ISLAND"]
+                    },
+                    "length": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 320
+                    },
+                    "depth": {
+                      "type": "number",
+                      "minimum": 1,
+                      "example": 65
+                    }
+                  }
+                }
+              ]
+            },
+            "sink": {
+              "description": "Sink configuration (null or object)",
+              "oneOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "required": ["type", "holes"],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Sink type (e.g., undermount, topmount)",
+                      "example": "undermount"
+                    },
+                    "holes": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of sink holes to cut",
+                      "example": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "cooktopHole": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether to cut a cooktop hole",
+              "example": true
+            },
+            "install": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether installation service is included",
+              "example": true
+            },
+            "skirting": {
+              "type": "object",
+              "description": "Skirting configuration (optional)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether skirting is included"
+                },
+                "heightCm": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Skirting height in cm (optional)",
+                  "example": 10
+                }
+              },
+              "required": ["enabled"]
+            },
+            "trim": {
+              "type": "object",
+              "description": "Trim profile configuration (optional)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether trim is included"
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Trim model/type (optional)",
+                  "example": "standard"
+                }
+              },
+              "required": ["enabled"]
+            },
+            "panelled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether countertop has panelled edges (future feature)"
+            },
+            "sideBox": {
+              "type": "object",
+              "description": "Side box configuration (optional)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether side box is included"
+                },
+                "sizeCm": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Side box size in cm (optional)",
+                  "example": 50
+                }
+              },
+              "required": ["enabled"]
+            },
+            "address": {
+              "type": "object",
+              "description": "Shipping address (optional, omit for no shipping)",
+              "properties": {
+                "city": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "İstanbul"
+                },
+                "district": {
+                  "type": "string",
+                  "default": "",
+                  "example": "Kadıköy"
+                }
+              },
+              "required": ["city"]
+            },
+            "dealerId": {
+              "type": "string",
+              "description": "Database CUID of dealer (optional, omit for no dealer discount)",
+              "example": "cm..."
+            }
+          }
+        },
+        "exampleGoldenA": {
+          "stoneColorId": "cmu9pojis000vjrrp5epidwok",
+          "thicknessId": "cmu9pojiy001djrrp8x5dfbpi",
+          "formTypeId": "cmu9pojj0001gjrrp0678b8d4",
+          "edgeTypeId": "cmu9pojj2001jjrrps0l86qvb",
+          "dimensions": {
+            "formType": "L",
+            "leg1": 320,
+            "leg2": 180,
+            "depth": 65
+          },
+          "sink": {
+            "type": "undermount",
+            "holes": 1
+          },
+          "cooktopHole": true,
+          "install": true,
+          "skirting": {
+            "enabled": false
+          },
+          "trim": {
+            "enabled": false
+          },
+          "panelled": false,
+          "sideBox": {
+            "enabled": false
+          },
+          "address": {
+            "city": "İstanbul",
+            "district": "Kadıköy"
+          }
+        },
+        "exampleGoldenB": {
+          "stoneColorId": "cmu9pojis000vjrrp5epidwok",
+          "thicknessId": "cmu9pojiy001djrrp8x5dfbpi",
+          "formTypeId": "cmu9pojj0001gjrrp0678b8d4",
+          "edgeTypeId": "cmu9pojj2001jjrrps0l86qvb",
+          "dimensions": {
+            "formType": "L",
+            "leg1": 320,
+            "leg2": 180,
+            "depth": 65
+          },
+          "sink": null,
+          "cooktopHole": false,
+          "install": false,
+          "skirting": {
+            "enabled": true,
+            "heightCm": 10
+          },
+          "trim": {
+            "enabled": true,
+            "model": "standard"
+          },
+          "panelled": false,
+          "sideBox": {
+            "enabled": false
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Quote computed successfully",
+          "contentType": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "currency",
+              "lines",
+              "subtotalExVat",
+              "dealerDiscount",
+              "promoDiscount",
+              "vatAmount",
+              "vatRate",
+              "totalInclVat",
+              "total",
+              "pricingSnapshot",
+              "warnings"
+            ],
+            "properties": {
+              "currency": {
+                "type": "string",
+                "enum": ["TRY"],
+                "description": "Currency code (always TRY)"
+              },
+              "lines": {
+                "type": "array",
+                "description": "Quote line items",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "STONE_M2"
+                    },
+                    "label": {
+                      "type": "string",
+                      "example": "Beyaz Kuvars - 3 cm"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "example": "M2"
+                    },
+                    "quantity": {
+                      "type": "string",
+                      "description": "Quantity as string with 4 decimal places for areas, 2 for counts",
+                      "example": "2.9689"
+                    },
+                    "unitPrice": {
+                      "type": "string",
+                      "description": "Unit price with exactly 2 decimal places",
+                      "example": "2231.46"
+                    },
+                    "lineTotal": {
+                      "type": "string",
+                      "description": "Line total with exactly 2 decimal places",
+                      "example": "6624.98"
+                    },
+                    "sortOrder": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  }
+                }
+              },
+              "subtotalExVat": {
+                "type": "string",
+                "description": "Subtotal excluding VAT (2 decimals)",
+                "example": "8174.98"
+              },
+              "dealerDiscount": {
+                "type": "string",
+                "description": "Dealer discount amount (2 decimals)",
+                "example": "0.00"
+              },
+              "promoDiscount": {
+                "type": "string",
+                "description": "Promotional discount amount (2 decimals)",
+                "example": "0.00"
+              },
+              "vatAmount": {
+                "type": "string",
+                "description": "VAT amount (2 decimals)",
+                "example": "1635.00"
+              },
+              "vatRate": {
+                "type": "string",
+                "description": "VAT rate (4 decimals)",
+                "example": "0.2000"
+              },
+              "totalInclVat": {
+                "type": "string",
+                "description": "Total including VAT (2 decimals)",
+                "example": "9809.98"
+              },
+              "total": {
+                "type": "string",
+                "description": "Alias for totalInclVat (FE compatibility)",
+                "example": "9809.98"
+              },
+              "pricingSnapshot": {
+                "type": "object",
+                "description": "Full contract v1.0.0 pricing snapshot for audit/persistence"
+              },
+              "warnings": {
+                "type": "array",
+                "description": "Warning messages (always present, empty when no warnings)",
+                "items": {
+                  "type": "string"
+                },
+                "example": []
+              }
+            }
+          },
+          "exampleGoldenA": {
+            "currency": "TRY",
+            "lines": [
+              {
+                "code": "STONE_M2",
+                "label": "Beyaz Kuvars - 3 cm",
+                "unit": "M2",
+                "quantity": "2.9689",
+                "unitPrice": "2231.46",
+                "lineTotal": "6624.98",
+                "sortOrder": 0
+              },
+              {
+                "code": "SINK_HOLE",
+                "label": "Eviye Deliği",
+                "unit": "ADET",
+                "quantity": "1",
+                "unitPrice": "300.00",
+                "lineTotal": "300.00",
+                "sortOrder": 1
+              }
+            ],
+            "subtotalExVat": "8174.98",
+            "dealerDiscount": "0.00",
+            "promoDiscount": "0.00",
+            "vatAmount": "1635.00",
+            "vatRate": "0.2000",
+            "totalInclVat": "9809.98",
+            "total": "9809.98",
+            "pricingSnapshot": {},
+            "warnings": []
+          }
+        },
+        "400": {
+          "description": "Validation error",
+          "contentType": "application/json",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": ["VALIDATION_ERROR"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "details": {
+                    "type": "array",
+                    "description": "Zod validation errors"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Resource not found (stone color, thickness, form type, edge type, or dealer not found)",
+          "contentType": "application/json",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": ["NOT_FOUND"]
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "Internal server error",
+          "contentType": "application/json",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": ["INTERNAL_ERROR", "UNKNOWN_ERROR"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "details": {
+                    "type": "string",
+                    "description": "Error details (optional)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "futureEndpoints": {
+    "note": "F2+ will need catalog endpoints for frontend to load available options",
+    "endpoints": [
+      "GET /api/catalog/stone-colors",
+      "GET /api/catalog/thicknesses",
+      "GET /api/catalog/form-types",
+      "GET /api/catalog/edge-types",
+      "GET /api/catalog/dealers"
+    ]
+  }
+}

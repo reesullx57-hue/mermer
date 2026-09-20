@@ -43,19 +43,39 @@ export const DimensionsSchema = z.discriminatedUnion('formType', [
   DimensionsIslandSchema,
 ]);
 
+export const SinkSchema = z.object({
+  type: z.string(),
+  holes: z.number().int().min(0),
+}).nullable();
+
+export const SkirtingSchema = z.object({
+  enabled: z.boolean(),
+  heightCm: z.number().positive().optional(),
+});
+
+export const TrimSchema = z.object({
+  enabled: z.boolean(),
+  model: z.string().optional(),
+});
+
+export const SideBoxSchema = z.object({
+  enabled: z.boolean(),
+  sizeCm: z.number().positive().optional(),
+});
+
 export const ConfigurationInputSchema = z.object({
   stoneColorId: z.string().cuid(),
   thicknessId: z.string().cuid(),
   formTypeId: z.string().cuid(),
   edgeTypeId: z.string().cuid(),
   dimensions: DimensionsSchema,
-  sinkHoles: z.number().int().min(0).default(0),
+  sink: SinkSchema.optional(),
   cooktopHole: z.boolean().default(false),
   install: z.boolean().default(false),
-  skirtingEnabled: z.boolean().default(false),
-  skirtingHeightCm: z.number().positive().optional(),
-  trimEnabled: z.boolean().default(false),
-  trimModel: z.string().optional(),
+  skirting: SkirtingSchema.optional(),
+  trim: TrimSchema.optional(),
+  panelled: z.boolean().default(false),
+  sideBox: SideBoxSchema.optional(),
   address: AddressSchema.optional(),
   dealerId: z.string().cuid().optional(),
 });

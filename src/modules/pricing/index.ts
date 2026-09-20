@@ -249,16 +249,16 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
   });
 
   // Sink holes
-  if (input.sinkHoles > 0) {
+  if (input.sink && input.sink.holes > 0) {
     const sinkTotal = new Decimal(rules.sinkHoleFee)
-      .mul(input.sinkHoles)
+      .mul(input.sink.holes)
       .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
     lines.push({
       code: 'SINK_HOLE',
       label: 'Eviye Deliği',
       unit: 'ADET',
-      quantity: input.sinkHoles.toString(),
+      quantity: input.sink.holes.toString(),
       unitPrice: new Decimal(rules.sinkHoleFee).toFixed(2),
       lineTotal: sinkTotal.toFixed(2),
       sortOrder: sortOrder++,
@@ -292,7 +292,7 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
   }
 
   // Skirting (based on leg1 length in meters for L form)
-  if (input.skirtingEnabled) {
+  if (input.skirting?.enabled) {
     // Calculate skirting length in meters
     // For L form: use leg1 (the main counter length)
     // For STRAIGHT/ISLAND: use length
@@ -322,7 +322,7 @@ export async function computeQuote(input: ConfigurationInput): Promise<PricingSn
   }
 
   // Trim (based on leg1 length in meters for L form)
-  if (input.trimEnabled) {
+  if (input.trim?.enabled) {
     // Calculate trim length in meters
     // For L form: use leg1 (the main counter length)
     // For STRAIGHT/ISLAND: use length
