@@ -1,7 +1,8 @@
 export interface TaxConfig {
   id: string;
-  taxType: 'VAT_TR';
+  code: string;
   vatRate: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }

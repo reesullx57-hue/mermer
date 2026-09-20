@@ -55,54 +55,52 @@ export async function fetchShippingZones(): Promise<ShippingZoneWithAudit[]> {
     },
   });
 
-  return handleResponse<ShippingZoneWithAudit[]>(response);
+  const data = await handleResponse<{ zones: ShippingZoneWithAudit[] }>(response);
+  return data.zones;
 }
 
 export async function createShippingZone(
   data: CreateShippingZoneRequest
 ): Promise<ShippingZoneWithAudit> {
+  const payload = {
+    city: data.city,
+    district: data.district,
+    fee: parseFloat(data.fee),
+    installAvailable: data.installAvailable,
+    isActive: data.isActive,
+  };
+
   const response = await fetch('/api/admin/shipping-zones', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
 
-  return handleResponse<ShippingZoneWithAudit>(response);
+  const result = await handleResponse<{ zone: ShippingZoneWithAudit }>(response);
+  return result.zone;
 }
 
 export async function updateShippingZone(
   id: string,
   data: UpdateShippingZoneRequest
 ): Promise<ShippingZoneWithAudit> {
+  const payload: any = {};
+  if (data.fee !== undefined) payload.fee = parseFloat(data.fee);
+  if (data.installAvailable !== undefined) payload.installAvailable = data.installAvailable;
+  if (data.isActive !== undefined) payload.isActive = data.isActive;
+
   const response = await fetch(`/api/admin/shipping-zones/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
 
-  return handleResponse<ShippingZoneWithAudit>(response);
-}
-
-export async function deleteShippingZone(id: string): Promise<void> {
-  const response = await fetch(`/api/admin/shipping-zones/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new ShippingApiError(
-      errorData?.error?.message || 'Silme işlemi başarısız oldu',
-      errorData?.error?.code || 'DELETE_FAILED',
-      response.status
-    );
-  }
+  const result = await handleResponse<{ zone: ShippingZoneWithAudit }>(response);
+  return result.zone;
 }
 
 export { ShippingApiError };

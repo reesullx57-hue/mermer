@@ -26,8 +26,6 @@ export interface CreateShippingZoneRequest {
 }
 
 export interface UpdateShippingZoneRequest {
-  city?: string;
-  district?: string;
   fee?: string;
   installAvailable?: boolean;
   isActive?: boolean;

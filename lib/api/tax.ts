@@ -47,28 +47,40 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export async function fetchTaxConfig(): Promise<TaxConfigWithAudit> {
-  const response = await fetch('/api/admin/tax-config', {
+  const response = await fetch('/api/admin/tax-configs', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
   });
 
-  return handleResponse<TaxConfigWithAudit>(response);
+  const data = await handleResponse<{ configs: TaxConfigWithAudit[] }>(response);
+  const vatTr = data.configs.find((c) => c.code === 'VAT_TR');
+  
+  if (!vatTr) {
+    throw new TaxApiError('VAT_TR config not found', 'NOT_FOUND', 404);
+  }
+  
+  return vatTr;
 }
 
 export async function updateTaxConfig(
   data: UpdateTaxConfigRequest
 ): Promise<TaxConfigWithAudit> {
-  const response = await fetch('/api/admin/tax-config', {
+  const payload = {
+    vatRate: parseFloat(data.vatRate),
+  };
+
+  const response = await fetch('/api/admin/tax-configs?code=VAT_TR', {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
 
-  return handleResponse<TaxConfigWithAudit>(response);
+  const result = await handleResponse<{ config: TaxConfigWithAudit }>(response);
+  return result.config;
 }
 
 export { TaxApiError };

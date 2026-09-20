@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Truck, Plus, Edit2, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Truck, Plus, Edit2, Loader2, AlertCircle } from 'lucide-react';
 import type {
   ShippingZoneWithAudit,
   CreateShippingZoneRequest,
@@ -11,7 +11,6 @@ import {
   fetchShippingZones,
   createShippingZone,
   updateShippingZone,
-  deleteShippingZone,
   ShippingApiError,
 } from '@/lib/api/shipping';
 import { showToast, ToastContainer } from '@/components/Toast';
@@ -113,8 +112,6 @@ export default function ShippingPage() {
         showToast('Nakliye bölgesi başarıyla oluşturuldu.', 'success');
       } else if (formMode === 'edit' && selectedZone) {
         const request: UpdateShippingZoneRequest = {
-          city: formData.city,
-          district: formData.district,
           fee: formData.fee,
           installAvailable: formData.installAvailable,
           isActive: formData.isActive,
@@ -140,29 +137,6 @@ export default function ShippingPage() {
     }
   }
 
-  async function handleDelete(zone: ShippingZoneWithAudit) {
-    const displayName = zone.district ? `${zone.city} - ${zone.district}` : `${zone.city} (İl Geneli)`;
-    if (!confirm(`"${displayName}" bölgesini silmek istediğinizden emin misiniz?`)) {
-      return;
-    }
-
-    try {
-      await deleteShippingZone(zone.id);
-      showToast('Nakliye bölgesi silindi.', 'success');
-      loadZones();
-    } catch (err) {
-      if (err instanceof ShippingApiError) {
-        if (err.code === 'FORBIDDEN') {
-          showToast('Erişim reddedildi. Admin yetkisi gerekli.', 'error');
-        } else {
-          showToast(err.message, 'error');
-        }
-      } else {
-        showToast('İşlem sırasında bir hata oluştu.', 'error');
-      }
-      console.error('Delete error:', err);
-    }
-  }
 
   return (
     <div>
@@ -297,17 +271,10 @@ export default function ShippingPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => openEditForm(zone)}
-                      className="text-blue-600 hover:text-blue-800 mr-4"
+                      className="text-blue-600 hover:text-blue-800"
                       title="Düzenle"
                     >
                       <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(zone)}
-                      className="text-red-600 hover:text-red-800"
-                      title="Sil"
-                    >
-                      <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
@@ -336,9 +303,15 @@ export default function ShippingPage() {
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   required
+                  disabled={formMode === 'edit'}
                   placeholder="Örn: İstanbul"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-600"
                 />
+                {formMode === 'edit' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    İl değiştirilemez
+                  </p>
+                )}
               </div>
 
               <div>
@@ -349,11 +322,14 @@ export default function ShippingPage() {
                   type="text"
                   value={formData.district}
                   onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                  disabled={formMode === 'edit'}
                   placeholder="Boş bırakılırsa: İl Geneli"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-600"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Boş bırakılırsa il geneli olarak kaydedilir
+                  {formMode === 'edit' 
+                    ? 'İlçe değiştirilemez' 
+                    : 'Boş bırakılırsa il geneli olarak kaydedilir'}
                 </p>
               </div>
 
