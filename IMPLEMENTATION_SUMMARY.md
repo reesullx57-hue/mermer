@@ -12,18 +12,16 @@
 - **Şablon İndirme**: Örnek CSV şablonu indirme butonu
 - **ADMIN Layout**: Mevcut admin navigasyonu ile entegre
 
-### Backend (`/api/admin/import`)
-- **Kimlik Doğrulama**: Session kontrolü
+### Backend (Pricing Engine API)
+- **Endpoint**: `POST /api/admin/import/stones` (ADR-027)
+- **Entegrasyon**: Frontend PE API'sine bağlı
+- **Kimlik Doğrulama**: Session kontrolü (PE tarafından)
 - **RBAC Koruması**: Sadece ADMIN rolü erişebilir
-- **CSV Ayrıştırma**: Otomatik CSV parsing
-- **Veri Doğrulama**: 
-  - Zorunlu alan kontrolleri
-  - Sayısal değer validasyonu (m2Price, wastePercent)
-  - Aralık kontrolleri (fiyat > 0, fire 0-100)
-  - URL format doğrulama
-- **Dry-Run Desteği**: Veritabanına yazmadan doğrulama
-- **Hata Toplama**: Detaylı hata listesi oluşturma
-- **403 FORBIDDEN**: Yetki hatası için özel yanıt
+- **CSV Ayrıştırma**: PE tarafından yapılır
+- **Veri Doğrulama**: PE validation engine kullanır
+- **Dry-Run Desteği**: `dryRun` parametresi ile
+- **Hata Formatı**: `{row, field, reason}` (PE standardı)
+- **ImportJob**: ADR-027 uyumlu
 
 ## 📋 CSV Formatı
 
@@ -49,10 +47,11 @@ Marka B,Koleksiyon 2,ST002,Gri Granit,C002,Koyu Gri,520.00,12,https://example.co
 
 ## 🔌 API Sözleşmesi
 
-### Endpoint
+### Endpoint (Pricing Engine)
 ```
-POST /api/admin/import
+POST /api/admin/import/stones
 Content-Type: multipart/form-data
+Reference: ADR-027 ImportJob
 ```
 
 ### İstek Parametreleri
@@ -123,12 +122,13 @@ Content-Type: multipart/form-data
 
 ## 📦 Teslim Edilen Dosyalar
 
-### Yeni Dosyalar
+### Yeni/Değişen Dosyalar
 - `app/admin/import/page.tsx` - Ana UI komponenti (yeniden yazıldı)
-- `app/api/admin/import/route.ts` - API endpoint (yeni)
+- `IMPLEMENTATION_SUMMARY.md` - Uygulama dokümantasyonu
 
-### Değişen Dosyalar
-- `package-lock.json` - Bağımlılık güncellemesi
+### PE Entegrasyonu
+- Frontend → `POST /api/admin/import/stones` (ADR-027)
+- Backend API PE tarafından sağlanıyor
 
 ## 🔐 Güvenlik
 

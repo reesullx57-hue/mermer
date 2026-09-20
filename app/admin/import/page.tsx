@@ -106,7 +106,7 @@ export default function ImportPage() {
     formData.append('dryRun', String(dryRun));
 
     try {
-      const response = await fetch('/api/admin/import', {
+      const response = await fetch('/api/admin/import/stones', {
         method: 'POST',
         body: formData,
       });
