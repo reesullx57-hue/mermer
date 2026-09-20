@@ -257,6 +257,12 @@ describe('Full Integration: Quote Persistence + Cache Invalidation (F2 Gate 2)',
   });
 
   afterAll(async () => {
+    // Final cleanup: ensure SINK_HOLE is at 300
+    await prisma.priceRule.update({
+      where: { code: 'SINK_HOLE' },
+      data: { value: 300 },
+    });
+    await invalidatePricingCache();
     await prisma.$disconnect();
   });
 });

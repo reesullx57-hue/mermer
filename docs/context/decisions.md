@@ -315,3 +315,39 @@ if (!isAdmin) {
 - Frontend implements `/403` page (static or simple component)
 - API clients handle 403 status + parse error JSON
 - Consistent error handling across admin surfaces
+
+---
+
+## ADR-018 — Last Updater from AuditLog
+**Status:** Accepted (F2 Gate 2).
+
+**Decision:** Admin UI "son güncelleyen" (last updated by) information comes from the latest `AuditLog` row for that entity (`UPDATE` or `CREATE` action), not from an `updatedBy` column on `PriceRule` or other entities. The `updatedAt` timestamp remains on the model; actor name/ID is retrieved from `AuditLog.userId`.
+
+**Rationale:** 
+- Avoid database migration to add `updatedBy` FK to every mutable entity
+- `AuditLog` already stores complete actor information (userId, action, timestamp)
+- Consistent pattern: all mutations write AuditLog, so latest entry is always accurate
+- Provides audit trail with before/after state, not just "who last touched it"
+
+**Implementation:**
+```typescript
+// Query latest audit log for an entity
+const latestAudit = await prisma.auditLog.findFirst({
+  where: {
+    entityType: 'PriceRule',
+    entityId: ruleId,
+    action: { in: ['CREATE', 'UPDATE'] },
+  },
+  orderBy: { createdAt: 'desc' },
+  include: { user: true },
+});
+
+const lastUpdatedBy = latestAudit?.user.email;
+const lastUpdatedAt = latestAudit?.createdAt;
+```
+
+**Impact:**
+- Frontend fetches audit log when displaying "last updated by"
+- Slightly higher query complexity vs. FK column, but negligible for admin UIs
+- Scales naturally to all entity types without schema changes
+- Future: consider materialized view or cached computed field if performance becomes issue
