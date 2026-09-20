@@ -20,17 +20,19 @@ export async function POST(request: NextRequest) {
     // Compute quote
     const pricingSnapshot = await computeQuote(validatedInput);
 
-    // Return response with money strings + pricing snapshot
+    // Return flat contract response
     return NextResponse.json({
-      success: true,
-      data: {
-        subtotalExVat: pricingSnapshot.subtotalExVat,
-        dealerDiscount: pricingSnapshot.dealerDiscount,
-        promoDiscount: pricingSnapshot.promoDiscount,
-        vatAmount: pricingSnapshot.vatAmount,
-        totalInclVat: pricingSnapshot.totalInclVat,
-        pricingSnapshot,
-      },
+      currency: 'TRY',
+      lines: pricingSnapshot.lines,
+      subtotalExVat: pricingSnapshot.subtotalExVat,
+      dealerDiscount: pricingSnapshot.dealerDiscount,
+      promoDiscount: pricingSnapshot.promoDiscount,
+      vatAmount: pricingSnapshot.vatAmount,
+      vatRate: pricingSnapshot.vatRate,
+      totalInclVat: pricingSnapshot.totalInclVat,
+      total: pricingSnapshot.totalInclVat, // Alias for FE compatibility
+      pricingSnapshot,
+      warnings: [],
     });
   } catch (error) {
     // Handle Zod validation errors

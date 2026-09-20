@@ -71,18 +71,28 @@ describe('POST /api/pricing/quote', () => {
     const data = await response.json() as any;
 
     expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.data).toBeDefined();
 
-    // Verify money totals
-    expect(data.data.subtotalExVat).toBe('8174.98');
-    expect(data.data.vatAmount).toBe('1635.00');
-    expect(data.data.totalInclVat).toBe('9809.98');
+    // Verify flat contract structure
+    expect(data.currency).toBe('TRY');
+    expect(data.warnings).toEqual([]);
+
+    // Verify lines array
+    expect(Array.isArray(data.lines)).toBe(true);
+    expect(data.lines.length).toBeGreaterThan(0);
+
+    // Verify money totals (Golden A)
+    expect(data.subtotalExVat).toBe('8174.98');
+    expect(data.dealerDiscount).toBe('0.00');
+    expect(data.promoDiscount).toBe('0.00');
+    expect(data.vatAmount).toBe('1635.00');
+    expect(data.vatRate).toBe('0.2000');
+    expect(data.totalInclVat).toBe('9809.98');
+    expect(data.total).toBe('9809.98'); // Alias
 
     // Verify pricing snapshot is included
-    expect(data.data.pricingSnapshot).toBeDefined();
-    expect(data.data.pricingSnapshot.contractVersion).toBe('1.0.0');
-    expect(data.data.pricingSnapshot.totalInclVat).toBe('9809.98');
+    expect(data.pricingSnapshot).toBeDefined();
+    expect(data.pricingSnapshot.contractVersion).toBe('1.0.0');
+    expect(data.pricingSnapshot.totalInclVat).toBe('9809.98');
   });
 
   it('Golden B: returns 8909.98 TRY for L form with skirting+trim', async () => {
@@ -115,12 +125,30 @@ describe('POST /api/pricing/quote', () => {
     const data = await response.json() as any;
 
     expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
 
-    // Verify money totals
-    expect(data.data.subtotalExVat).toBe('7424.98');
-    expect(data.data.vatAmount).toBe('1485.00');
-    expect(data.data.totalInclVat).toBe('8909.98');
+    // Verify flat contract structure
+    expect(data.currency).toBe('TRY');
+    expect(data.warnings).toEqual([]);
+
+    // Verify money totals (Golden B)
+    expect(data.subtotalExVat).toBe('7424.98');
+    expect(data.dealerDiscount).toBe('0.00');
+    expect(data.promoDiscount).toBe('0.00');
+    expect(data.vatAmount).toBe('1485.00');
+    expect(data.vatRate).toBe('0.2000');
+    expect(data.totalInclVat).toBe('8909.98');
+    expect(data.total).toBe('8909.98'); // Alias
+
+    // Verify skirting and trim lines
+    const skirtingLine = data.lines.find((l: any) => l.code === 'SKIRTING');
+    expect(skirtingLine).toBeDefined();
+    expect(skirtingLine.quantity).toBe('3.20');
+    expect(skirtingLine.lineTotal).toBe('480.00');
+
+    const trimLine = data.lines.find((l: any) => l.code === 'TRIM');
+    expect(trimLine).toBeDefined();
+    expect(trimLine.quantity).toBe('3.20');
+    expect(trimLine.lineTotal).toBe('320.00');
   });
 
   it('returns 400 for invalid input', async () => {
