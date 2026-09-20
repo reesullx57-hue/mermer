@@ -9,11 +9,18 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+enum Role {
+  ADMIN
+  DEALER
+  USER
+}
+
 model User {
   id        String    @id @default(uuid())
   email     String    @unique
   password  String
   name      String?
+  role      Role      @default(USER)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   projects  Project[]

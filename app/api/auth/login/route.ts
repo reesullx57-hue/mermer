@@ -33,13 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await createSession(user.id, user.email);
+    await createSession(user.id, user.email, user.role);
 
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
       },
     });
   } catch (error) {
