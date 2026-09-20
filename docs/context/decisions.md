@@ -490,3 +490,78 @@ StoneBrand (e.g., "Lamar", "NG Stone")
 - UI must enforce hierarchy: select brand before creating collection, select stone before creating color
 - AuditLog records all mutations across 4 entity types
 - Cache invalidation: all 4 entity mutations call `invalidateCatalogCache('stones')`
+
+---
+
+## ADR-024 — Shipping Cache Tags Strategy
+**Status:** Planned (F2 Gate 5+ Shipping CRUD).
+
+**Decision:** ShippingZone mutations (city/district/fee changes) will invalidate `pricing:v1:shipping` + `pricing:v1:all` tags. Shipping fees are part of quote total, so pricing cache must be invalidated when zones change.
+
+**Rationale:**
+- ShippingZone.fee affects `totalInclVat` in quotes
+- Separate `pricing:v1:shipping` tag allows granular invalidation (e.g., catalog queries don't need to invalidate shipping)
+- `pricing:v1:all` ensures quotes are recomputed when any pricing factor changes
+
+**Implementation (planned):**
+```typescript
+// ShippingZone CREATE/UPDATE/DELETE
+await invalidatePricingCache(); // Already invalidates pricing:v1:shipping + pricing:v1:all
+```
+
+**Impact:**
+- Consistent with existing PriceRule mutation pattern (pricing:v1:*)
+- No new `shipping:*` namespace needed (shipping is pricing concern, not catalog)
+- F2 Gate 5+ will add ShippingZone admin CRUD with this tag strategy
+
+---
+
+## ADR-025 — Tax Cache Tags Strategy
+**Status:** Planned (F2 Gate 5+ Tax Config CRUD).
+
+**Decision:** TaxConfig mutations (VAT rate changes) will invalidate `pricing:v1:tax` + `pricing:v1:all` tags. Tax rates directly affect quote totals, so pricing cache must be invalidated.
+
+**Rationale:**
+- TaxConfig.vatRate affects `vatAmount` and `totalInclVat` in every quote
+- Separate `pricing:v1:tax` tag for granular invalidation
+- `pricing:v1:all` ensures comprehensive quote cache bust
+
+**Implementation (planned):**
+```typescript
+// TaxConfig UPDATE (typically single-row table)
+await invalidatePricingCache(); // Already invalidates pricing:v1:tax + pricing:v1:all
+```
+
+**Impact:**
+- Consistent with PriceRule/ShippingZone pattern
+- F2 Gate 5+ will add TaxConfig admin CRUD (likely single-row update only, not create/delete)
+- Critical: VAT rate changes affect all existing quotes; FE should warn admin before saving
+
+---
+
+## ADR-026 — CSV Import Atomic Transaction Details
+**Status:** Planned (F2 Gate 6+ Import).
+
+**Decision:** CSV import uses two-pass validation: (1) parse + validate all rows with Zod schemas, collecting errors; (2) if all valid, execute single Prisma `$transaction([...creates])` for atomic commit. Rollback on any failure.
+
+**Rationale:**
+- Memory-efficient for large files (stream parse → validate → batch write)
+- Atomic: partial imports corrupt catalog integrity (e.g., missing brand FK for stones)
+- Fast failure: user sees all validation errors at once, not row-by-row
+
+**Implementation details (planned):**
+- **Parser:** `papaparse` or `csv-parse` (stream mode)
+- **Validation pass:** Accumulate all row errors (missing fields, invalid format, duplicate codes, FK not found)
+- **Transaction:** `prisma.$transaction(creates, { timeout: 60000 })` for large batches
+- **Limits:** Max 10,000 rows per import; batch in chunks of 1000 if needed
+- **Response format:**
+  ```typescript
+  { success: true, imported: { brands: 5, stones: 120, colors: 480 } }
+  // OR
+  { success: false, errors: [{ row: 42, field: 'brandId', message: 'Brand not found' }] }
+  ```
+
+**Impact:**
+- F2 Gate 6+ endpoints: POST /api/admin/import/stones (multipart CSV)
+- UI shows progress bar + full error report
+- Detailed design deferred to import gate
