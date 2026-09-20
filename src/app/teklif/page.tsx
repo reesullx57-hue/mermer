@@ -6,39 +6,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import type { QuoteFormData, QuoteResponse, FormType, EdgeType, SinkType } from '@/types/quote';
+import type { QuoteFormData, QuoteResponse, FormType } from '@/types/quote';
 import { getQuote } from '@/lib/pricing/quote-client';
+import { STONE_COLORS, THICKNESSES, FORM_TYPES, EDGE_TYPES, getThicknessId, getFormTypeId, getEdgeTypeId } from '@/lib/pricing/catalog-ids';
 import { Loader2 } from 'lucide-react';
 
 export default function TeklifPage() {
   const [formData, setFormData] = useState<QuoteFormData>({
-    stoneColorId: '',
-    thickness: 2,
-    formType: 'STRAIGHT',
-    edgeType: 'straight',
+    stoneColorId: STONE_COLORS.QUARTZ_WHITE,
+    thicknessId: THICKNESSES.CM_3,
+    formTypeId: FORM_TYPES.L,
+    edgeTypeId: EDGE_TYPES.RADIUS,
     dimensions: {
-      length: 0,
-      depth: 0,
+      formType: 'L',
+      leg1: 320,
+      leg2: 180,
+      depth: 65,
     },
-    sink: {
-      type: 'none',
-      holes: 0,
-    },
-    cooktopHole: false,
-    skirting: {
-      enabled: false,
-    },
-    trim: {
-      enabled: false,
-    },
-    sideBox: {
-      enabled: false,
-    },
-    panelled: false,
-    install: false,
+    sinkHoles: 1,
+    cooktopHole: true,
+    skirtingEnabled: false,
+    trimEnabled: false,
+    install: true,
     address: {
-      city: '',
-      district: '',
+      city: 'İstanbul',
+      district: 'Kadıköy',
     },
   });
 
@@ -47,15 +39,15 @@ export default function TeklifPage() {
   const [error, setError] = useState<string | null>(null);
 
   const updateDimensions = (formType: FormType) => {
-    const baseDepth = formData.dimensions.depth || 0;
+    const baseDepth = formData.dimensions.depth || 65;
     switch (formType) {
       case 'STRAIGHT':
       case 'ISLAND':
-        return { length: 0, depth: baseDepth };
+        return { formType, length: 200, depth: baseDepth };
       case 'L':
-        return { leg1: 0, leg2: 0, depth: baseDepth };
+        return { formType, leg1: 320, leg2: 180, depth: baseDepth };
       case 'U':
-        return { leg1: 0, leg2: 0, leg3: 0, depth: baseDepth };
+        return { formType, leg1: 200, leg2: 200, leg3: 200, depth: baseDepth };
     }
   };
 
@@ -63,8 +55,23 @@ export default function TeklifPage() {
     const formType = value as FormType;
     setFormData({
       ...formData,
-      formType,
+      formTypeId: getFormTypeId(value),
       dimensions: updateDimensions(formType),
+    });
+  };
+
+  const handleThicknessChange = (value: string) => {
+    const cm = parseInt(value) as 2 | 3 | 4;
+    setFormData({
+      ...formData,
+      thicknessId: getThicknessId(cm),
+    });
+  };
+
+  const handleEdgeTypeChange = (value: string) => {
+    setFormData({
+      ...formData,
+      edgeTypeId: getEdgeTypeId(value),
     });
   };
 
@@ -84,7 +91,7 @@ export default function TeklifPage() {
   };
 
   const renderDimensionFields = () => {
-    switch (formData.formType) {
+    switch (formData.dimensions.formType) {
       case 'STRAIGHT':
       case 'ISLAND':
         return (
@@ -240,21 +247,31 @@ export default function TeklifPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="stoneColorId">Taş Rengi ID</Label>
-                  <Input
-                    id="stoneColorId"
+                  <Label htmlFor="stoneColor">Taş Rengi</Label>
+                  <Select
                     value={formData.stoneColorId}
-                    onChange={(e) => setFormData({ ...formData, stoneColorId: e.target.value })}
-                    placeholder="Örn: CALACATTA-GOLD"
-                    required
-                  />
+                    onValueChange={(value) => setFormData({ ...formData, stoneColorId: value })}
+                  >
+                    <SelectTrigger id="stoneColor">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={STONE_COLORS.QUARTZ_WHITE}>Beyaz Kuvars</SelectItem>
+                      <SelectItem value={STONE_COLORS.QUARTZ_GREY}>Gri Kuvars</SelectItem>
+                      <SelectItem value={STONE_COLORS.QUARTZ_BLACK}>Siyah Kuvars</SelectItem>
+                      <SelectItem value={STONE_COLORS.QUARTZ_BEIGE}>Bej Kuvars</SelectItem>
+                      <SelectItem value={STONE_COLORS.GRANITE_BLACK}>Siyah Granit</SelectItem>
+                      <SelectItem value={STONE_COLORS.GRANITE_BROWN}>Kahverengi Granit</SelectItem>
+                      <SelectItem value={STONE_COLORS.MARBLE_WHITE}>Beyaz Mermer</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="thickness">Kalınlık (cm)</Label>
+                  <Label htmlFor="thickness">Kalınlık</Label>
                   <Select
-                    value={formData.thickness.toString()}
-                    onValueChange={(value) => setFormData({ ...formData, thickness: parseInt(value) as 2 | 3 | 4 })}
+                    value={formData.thicknessId === THICKNESSES.CM_2 ? '2' : formData.thicknessId === THICKNESSES.CM_3 ? '3' : '4'}
+                    onValueChange={handleThicknessChange}
                   >
                     <SelectTrigger id="thickness">
                       <SelectValue />
@@ -269,7 +286,10 @@ export default function TeklifPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="formType">Form Tipi</Label>
-                  <Select value={formData.formType} onValueChange={handleFormTypeChange}>
+                  <Select 
+                    value={formData.dimensions.formType} 
+                    onValueChange={handleFormTypeChange}
+                  >
                     <SelectTrigger id="formType">
                       <SelectValue />
                     </SelectTrigger>
@@ -285,8 +305,12 @@ export default function TeklifPage() {
                 <div className="space-y-2">
                   <Label htmlFor="edgeType">Kenar Tipi</Label>
                   <Select
-                    value={formData.edgeType}
-                    onValueChange={(value) => setFormData({ ...formData, edgeType: value as EdgeType })}
+                    value={
+                      formData.edgeTypeId === EDGE_TYPES.STRAIGHT ? 'straight' :
+                      formData.edgeTypeId === EDGE_TYPES.RADIUS ? 'radius' :
+                      formData.edgeTypeId === EDGE_TYPES.BEVEL ? 'bevel' : 'iron'
+                    }
+                    onValueChange={handleEdgeTypeChange}
                   >
                     <SelectTrigger id="edgeType">
                       <SelectValue />
@@ -308,39 +332,18 @@ export default function TeklifPage() {
                   <h3 className="font-semibold text-lg">Ekstra Özellikler</h3>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="sinkType">Eviye Tipi</Label>
-                    <Select
-                      value={formData.sink.type}
-                      onValueChange={(value) => setFormData({
+                    <Label htmlFor="sinkHoles">Eviye Delik Sayısı</Label>
+                    <Input
+                      id="sinkHoles"
+                      type="number"
+                      min="0"
+                      value={formData.sinkHoles}
+                      onChange={(e) => setFormData({
                         ...formData,
-                        sink: { ...formData.sink, type: value as SinkType }
+                        sinkHoles: parseInt(e.target.value) || 0
                       })}
-                    >
-                      <SelectTrigger id="sinkType">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Yok</SelectItem>
-                        <SelectItem value="undermount">Tezgah Altı</SelectItem>
-                        <SelectItem value="topmount">Tezgah Üstü</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
-
-                  {formData.sink.type !== 'none' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="sinkHoles">Eviye Delik Sayısı</Label>
-                      <Input
-                        id="sinkHoles"
-                        type="number"
-                        value={formData.sink.holes}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          sink: { ...formData.sink, holes: parseInt(e.target.value) || 0 }
-                        })}
-                      />
-                    </div>
-                  )}
 
                   <div className="flex items-center space-x-2">
                     <input
@@ -358,23 +361,23 @@ export default function TeklifPage() {
                       <input
                         type="checkbox"
                         id="skirting"
-                        checked={formData.skirting.enabled}
+                        checked={formData.skirtingEnabled}
                         onChange={(e) => setFormData({
                           ...formData,
-                          skirting: { ...formData.skirting, enabled: e.target.checked }
+                          skirtingEnabled: e.target.checked
                         })}
                         className="h-4 w-4"
                       />
                       <Label htmlFor="skirting">Süpürgelik</Label>
                     </div>
-                    {formData.skirting.enabled && (
+                    {formData.skirtingEnabled && (
                       <Input
                         type="number"
                         placeholder="Yükseklik (cm)"
-                        value={formData.skirting.heightCm || ''}
+                        value={formData.skirtingHeightCm || ''}
                         onChange={(e) => setFormData({
                           ...formData,
-                          skirting: { ...formData.skirting, heightCm: parseInt(e.target.value) || undefined }
+                          skirtingHeightCm: parseInt(e.target.value) || undefined
                         })}
                       />
                     )}
@@ -385,63 +388,25 @@ export default function TeklifPage() {
                       <input
                         type="checkbox"
                         id="trim"
-                        checked={formData.trim.enabled}
+                        checked={formData.trimEnabled}
                         onChange={(e) => setFormData({
                           ...formData,
-                          trim: { ...formData.trim, enabled: e.target.checked }
+                          trimEnabled: e.target.checked
                         })}
                         className="h-4 w-4"
                       />
                       <Label htmlFor="trim">Bordür</Label>
                     </div>
-                    {formData.trim.enabled && (
+                    {formData.trimEnabled && (
                       <Input
                         placeholder="Model"
-                        value={formData.trim.model || ''}
+                        value={formData.trimModel || ''}
                         onChange={(e) => setFormData({
                           ...formData,
-                          trim: { ...formData.trim, model: e.target.value }
+                          trimModel: e.target.value
                         })}
                       />
                     )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="sideBox"
-                        checked={formData.sideBox.enabled}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          sideBox: { ...formData.sideBox, enabled: e.target.checked }
-                        })}
-                        className="h-4 w-4"
-                      />
-                      <Label htmlFor="sideBox">Yan Kutu</Label>
-                    </div>
-                    {formData.sideBox.enabled && (
-                      <Input
-                        type="number"
-                        placeholder="Boyut (cm)"
-                        value={formData.sideBox.sizeCm || ''}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          sideBox: { ...formData.sideBox, sizeCm: parseInt(e.target.value) || undefined }
-                        })}
-                      />
-                    )}
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="panelled"
-                      checked={formData.panelled}
-                      onChange={(e) => setFormData({ ...formData, panelled: e.target.checked })}
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="panelled">Panel Kaplama</Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -517,7 +482,7 @@ export default function TeklifPage() {
                 <CardHeader>
                   <CardTitle>Teklif Sonucu</CardTitle>
                   <CardDescription>
-                    Fire: %{(quote.wastePercent * 100).toFixed(0)} ({quote.wasteSource})
+                    Para Birimi: {quote.currency} | KDV Oranı: %{(parseFloat(quote.vatRate) * 100).toFixed(0)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -537,18 +502,53 @@ export default function TeklifPage() {
 
                   <div className="space-y-2 pt-4 border-t-2">
                     <div className="flex justify-between">
-                      <span>Ara Toplam:</span>
-                      <span className="font-semibold">₺{quote.subtotal}</span>
+                      <span>Ara Toplam (KDV Hariç):</span>
+                      <span className="font-semibold">₺{quote.subtotalExVat}</span>
                     </div>
+                    {parseFloat(quote.dealerDiscount) > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Bayi İndirimi:</span>
+                        <span className="font-semibold">-₺{quote.dealerDiscount}</span>
+                      </div>
+                    )}
+                    {parseFloat(quote.promoDiscount) > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Promosyon İndirimi:</span>
+                        <span className="font-semibold">-₺{quote.promoDiscount}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
-                      <span>KDV (%18):</span>
-                      <span className="font-semibold">₺{quote.tax}</span>
+                      <span>KDV (%{(parseFloat(quote.vatRate) * 100).toFixed(0)}):</span>
+                      <span className="font-semibold">₺{quote.vatAmount}</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold border-t pt-2">
-                      <span>TOPLAM:</span>
-                      <span className="text-primary">₺{quote.total}</span>
+                      <span>TOPLAM (KDV Dahil):</span>
+                      <span className="text-primary">₺{quote.totalInclVat}</span>
                     </div>
                   </div>
+
+                  {quote.warnings && quote.warnings.length > 0 && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                      <p className="font-semibold text-yellow-800">Uyarılar:</p>
+                      <ul className="list-disc list-inside text-sm text-yellow-700">
+                        {quote.warnings.map((warning, index) => (
+                          <li key={index}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {quote.pricingSnapshot && (
+                    <details className="mt-4">
+                      <summary className="cursor-pointer text-sm text-muted-foreground">
+                        Detaylı Fiyatlama Bilgisi
+                      </summary>
+                      <div className="mt-2 p-3 bg-gray-50 rounded text-xs">
+                        <p>Faturalanan Alan: {quote.pricingSnapshot.billableAreaM2} m²</p>
+                        <p>Fire Kaynağı: {quote.pricingSnapshot.wasteSource}</p>
+                      </div>
+                    </details>
+                  )}
                 </CardContent>
               </Card>
             )}

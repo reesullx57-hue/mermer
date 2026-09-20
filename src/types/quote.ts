@@ -4,34 +4,23 @@ export type SinkType = 'none' | 'undermount' | 'topmount';
 
 export interface QuoteFormData {
   stoneColorId: string;
-  thickness: 2 | 3 | 4;
-  formType: FormType;
-  edgeType: EdgeType;
+  thicknessId: string;
+  formTypeId: string;
+  edgeTypeId: string;
   dimensions: {
+    formType: FormType;
     length?: number;
     depth?: number;
     leg1?: number;
     leg2?: number;
     leg3?: number;
   };
-  sink: {
-    type: SinkType;
-    holes: number;
-  };
+  sinkHoles: number;
   cooktopHole: boolean;
-  skirting: {
-    enabled: boolean;
-    heightCm?: number;
-  };
-  trim: {
-    enabled: boolean;
-    model?: string;
-  };
-  sideBox: {
-    enabled: boolean;
-    sizeCm?: number;
-  };
-  panelled: boolean;
+  skirtingEnabled: boolean;
+  skirtingHeightCm?: number;
+  trimEnabled: boolean;
+  trimModel?: string;
   install: boolean;
   address: {
     city: string;
@@ -46,18 +35,27 @@ export interface QuoteLine {
   quantity: string;
   unitPrice: string;
   lineTotal: string;
+  sortOrder?: number;
 }
 
 export interface QuoteResponse {
+  currency: string;
   lines: QuoteLine[];
-  subtotal: string;
-  tax: string;
+  subtotalExVat: string;
+  dealerDiscount: string;
+  promoDiscount: string;
+  vatAmount: string;
+  vatRate: string;
+  totalInclVat: string;
   total: string;
-  wastePercent: number;
-  wasteSource: string;
+  pricingSnapshot: any;
+  warnings: string[];
 }
 
 export interface QuoteError {
-  message: string;
-  code?: string;
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+  };
 }
