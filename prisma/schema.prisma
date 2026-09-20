@@ -37,24 +37,25 @@ enum OrderStatus {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
+  id            String      @id @default(cuid())
+  email         String      @unique
   name          String?
   passwordHash  String?
-  role          Role       @default(USER)
+  role          Role        @default(USER)
   dealerId      String?
-  dealer        Dealer?    @relation(fields: [dealerId], references: [id])
+  dealer        Dealer?     @relation(fields: [dealerId], references: [id])
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
-  quotesOwned   Quote[]    @relation("QuoteOwner")
-  quotesCreated Quote[]    @relation("QuoteCreatedBy")
-  quotesUpdated Quote[]    @relation("QuoteUpdatedBy")
+  quotesOwned   Quote[]     @relation("QuoteOwner")
+  quotesCreated Quote[]     @relation("QuoteCreatedBy")
+  quotesUpdated Quote[]     @relation("QuoteUpdatedBy")
   orders        Order[]
   auditLogs     AuditLog[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  importJobs    ImportJob[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Account {
@@ -350,4 +351,21 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([entityType, entityId])
+}
+
+model ImportJob {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  entityType  String
+  filename    String
+  totalRows   Int
+  successRows Int
+  errorRows   Int
+  status      String
+  errorReport Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entityType, status])
 }

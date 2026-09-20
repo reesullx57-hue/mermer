@@ -236,9 +236,20 @@ This document tracks key architectural decisions for the kitchen countertop conf
 ---
 
 ## ADR-016 — CSV Import Atomic
-**Status:** Accepted (F2).
+**Status:** Accepted (F2 Gate 6).
 
-**Decision:** Stone/StoneColor CSV import operations are atomic: one bad row causes the entire batch to roll back. Error reports include row number, field name, and validation failure reason.
+**Decision:** Stone CSV import operations are atomic using two-pass validation: (1) parse and validate ALL rows first with Zod schemas, collecting errors; (2) if all valid, execute single Prisma `$transaction` for atomic commit. Any validation error returns HTTP 400 with full error list, and zero rows are written. Optional `dryRun` flag returns validation results without writing.
+
+**Library Choice:** `csv-parse` (Node.js native CSV parser) for reliable parsing, Zod for validation.
+
+**Error Format:**
+```typescript
+{ success: false, errors: [{ row: 7, field: 'm2Price', reason: 'Invalid decimal format' }] }
+```
+
+**Optional dryRun:**
+- `?dryRun=true` → validate + return preview (counts, sample rows), no DB write
+- `?dryRun=false` (default) → validate + atomic write + cache invalidation
 
 **Rationale:** Partial imports lead to inconsistent catalog state. If a CSV contains 100 rows and row 73 is invalid, importing rows 1-72 and stopping would leave the database in a half-updated state. Atomic imports ensure all-or-nothing: either the entire CSV is valid and imported, or nothing changes.
 
@@ -246,6 +257,7 @@ This document tracks key architectural decisions for the kitchen countertop conf
 - CSV import uses database transactions (Prisma `$transaction`)
 - Validation occurs before any writes (two-pass: validate all, then import all)
 - Error response lists all validation failures with specific row/field/reason
+- `POST /api/admin/import/stones` endpoint (multipart CSV)
 - User can fix CSV and retry without worrying about duplicate imports
 - Idempotency: re-importing the same valid CSV (with same codes/IDs) should be safe (upsert strategy)
 
@@ -565,3 +577,44 @@ await invalidatePricingCache(); // Already invalidates pricing:v1:tax + pricing:
 - F2 Gate 6+ endpoints: POST /api/admin/import/stones (multipart CSV)
 - UI shows progress bar + full error report
 - Detailed design deferred to import gate
+
+---
+
+## ADR-027 — ImportJob Model vs AuditLog-Only
+**Status:** Accepted (F2 Gate 6).
+
+**Decision:** Create lightweight `ImportJob` model to track CSV import operations, plus one summary `AuditLog` entry per import. ImportJob stores outcome metrics (totalRows, successRows, errorRows) and optional error report JSON. AuditLog provides audit trail linking to user and timestamp.
+
+**ImportJob Schema:**
+```prisma
+model ImportJob {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  entityType  String   // "Stone"
+  filename    String
+  totalRows   Int
+  successRows Int
+  errorRows   Int
+  status      String   // "SUCCESS" | "PARTIAL_ERROR" | "VALIDATION_ERROR"
+  errorReport Json?    // [{ row, field, reason }]
+  createdAt   DateTime @default(now())
+}
+```
+
+**Rationale:**
+- **Why ImportJob?** AuditLog is designed for single-entity CRUD (one row per CREATE/UPDATE). Bulk imports affect hundreds of entities; storing 100 AuditLog rows per CSV is verbose and makes querying import history difficult.
+- **Why AuditLog too?** ImportJob lacks userId indexing and audit trail conventions. One AuditLog row per import provides consistent audit interface for admins ("who imported when").
+- **Lightweight:** ImportJob stores only aggregate counts + error summary, not full before/after for every entity.
+
+**Implementation:**
+1. Parse + validate CSV
+2. If errors → return 400, create ImportJob with status=VALIDATION_ERROR, errorReport JSON
+3. If valid → $transaction upsert entities, create ImportJob with status=SUCCESS, create AuditLog with action=IMPORT, entityType=Stone, after=ImportJob.id
+4. Invalidate cache
+
+**Impact:**
+- Admin UI can list import history via ImportJob queries (faster than scanning AuditLog)
+- Error reports stored in ImportJob.errorReport for debugging
+- AuditLog provides "last import by" timestamp for entity listings
+- F2 Gate 6+ implements ImportJob model + POST /api/admin/import/stones
