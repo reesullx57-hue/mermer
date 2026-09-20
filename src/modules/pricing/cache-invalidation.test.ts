@@ -18,6 +18,13 @@ describe('Pricing Cache Invalidation (F2 Gate 2)', () => {
   let edgeTypeId: string;
 
   beforeAll(async () => {
+    // Ensure SINK_HOLE is at original value before tests
+    await prisma.priceRule.update({
+      where: { code: 'SINK_HOLE' },
+      data: { value: 300 },
+    });
+    await invalidatePricingCache();
+
     // Find seed data IDs
     const stoneColor = await prisma.stoneColor.findFirst({
       where: { code: 'WHITE', stone: { code: 'QUARTZ-001' } },
