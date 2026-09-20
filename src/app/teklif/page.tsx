@@ -347,18 +347,40 @@ export default function TeklifPage() {
                   <h3 className="font-semibold text-lg">Ekstra Özellikler</h3>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="sinkHoles">Eviye Delik Sayısı</Label>
-                    <Input
-                      id="sinkHoles"
-                      type="number"
-                      min="0"
-                      value={formData.sinkHoles}
-                      onChange={(e) => setFormData({
+                    <Label htmlFor="sinkType">Eviye Tipi</Label>
+                    <Select
+                      value={formData.sink.type}
+                      onValueChange={(value) => setFormData({
                         ...formData,
-                        sinkHoles: parseInt(e.target.value) || 0
+                        sink: { ...formData.sink, type: value as SinkType }
                       })}
-                    />
+                    >
+                      <SelectTrigger id="sinkType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Yok</SelectItem>
+                        <SelectItem value="undermount">Tezgah Altı</SelectItem>
+                        <SelectItem value="topmount">Tezgah Üstü</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  {formData.sink.type !== 'none' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sinkHoles">Eviye Delik Sayısı</Label>
+                      <Input
+                        id="sinkHoles"
+                        type="number"
+                        min="0"
+                        value={formData.sink.holes}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          sink: { ...formData.sink, holes: parseInt(e.target.value) || 0 }
+                        })}
+                      />
+                    </div>
+                  )}
 
                   <div className="flex items-center space-x-2">
                     <input
@@ -376,23 +398,23 @@ export default function TeklifPage() {
                       <input
                         type="checkbox"
                         id="skirting"
-                        checked={formData.skirtingEnabled}
+                        checked={formData.skirting.enabled}
                         onChange={(e) => setFormData({
                           ...formData,
-                          skirtingEnabled: e.target.checked
+                          skirting: { ...formData.skirting, enabled: e.target.checked }
                         })}
                         className="h-4 w-4"
                       />
                       <Label htmlFor="skirting">Süpürgelik</Label>
                     </div>
-                    {formData.skirtingEnabled && (
+                    {formData.skirting.enabled && (
                       <Input
                         type="number"
                         placeholder="Yükseklik (cm)"
-                        value={formData.skirtingHeightCm || ''}
+                        value={formData.skirting.heightCm || ''}
                         onChange={(e) => setFormData({
                           ...formData,
-                          skirtingHeightCm: parseInt(e.target.value) || undefined
+                          skirting: { ...formData.skirting, heightCm: parseInt(e.target.value) || undefined }
                         })}
                       />
                     )}
@@ -403,25 +425,63 @@ export default function TeklifPage() {
                       <input
                         type="checkbox"
                         id="trim"
-                        checked={formData.trimEnabled}
+                        checked={formData.trim.enabled}
                         onChange={(e) => setFormData({
                           ...formData,
-                          trimEnabled: e.target.checked
+                          trim: { ...formData.trim, enabled: e.target.checked }
                         })}
                         className="h-4 w-4"
                       />
                       <Label htmlFor="trim">Bordür</Label>
                     </div>
-                    {formData.trimEnabled && (
+                    {formData.trim.enabled && (
                       <Input
                         placeholder="Model"
-                        value={formData.trimModel || ''}
+                        value={formData.trim.model || ''}
                         onChange={(e) => setFormData({
                           ...formData,
-                          trimModel: e.target.value
+                          trim: { ...formData.trim, model: e.target.value }
                         })}
                       />
                     )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="sideBox"
+                        checked={formData.sideBox.enabled}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          sideBox: { ...formData.sideBox, enabled: e.target.checked }
+                        })}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="sideBox">Yan Kutu</Label>
+                    </div>
+                    {formData.sideBox.enabled && (
+                      <Input
+                        type="number"
+                        placeholder="Boyut (cm)"
+                        value={formData.sideBox.sizeCm || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          sideBox: { ...formData.sideBox, sizeCm: parseInt(e.target.value) || undefined }
+                        })}
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="panelled"
+                      checked={formData.panelled}
+                      onChange={(e) => setFormData({ ...formData, panelled: e.target.checked })}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="panelled">Panel Kaplama</Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
