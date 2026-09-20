@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, Loader2, AlertCircle, Check, X } from 'lucide-react';
 import type {
-  StoneBrandWithAudit,
+  StoneBrand,
   CreateStoneBrandRequest,
   UpdateStoneBrandRequest,
 } from '@/lib/types/stone';
@@ -19,19 +19,21 @@ import { showToast } from '@/components/Toast';
 type FormMode = 'create' | 'edit' | null;
 
 interface FormData {
-  name: string;
+  code: string;
+  nameTr: string;
   isActive: boolean;
 }
 
 export default function StoneBrandsTab() {
-  const [brands, setBrands] = useState<StoneBrandWithAudit[]>([]);
+  const [brands, setBrands] = useState<StoneBrand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<FormMode>(null);
-  const [selectedBrand, setSelectedBrand] = useState<StoneBrandWithAudit | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<StoneBrand | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    name: '',
+    code: '',
+    nameTr: '',
     isActive: true,
   });
 
@@ -43,7 +45,7 @@ export default function StoneBrandsTab() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchStoneBrands();
+      const data = await fetchStoneBrands(true); // Include inactive
       setBrands(data);
     } catch (err) {
       if (err instanceof StonesApiError) {
@@ -65,16 +67,18 @@ export default function StoneBrandsTab() {
     setFormMode('create');
     setSelectedBrand(null);
     setFormData({
-      name: '',
+      code: '',
+      nameTr: '',
       isActive: true,
     });
   }
 
-  function openEditForm(brand: StoneBrandWithAudit) {
+  function openEditForm(brand: StoneBrand) {
     setFormMode('edit');
     setSelectedBrand(brand);
     setFormData({
-      name: brand.name,
+      code: brand.code,
+      nameTr: brand.nameTr,
       isActive: brand.isActive,
     });
   }
@@ -91,14 +95,15 @@ export default function StoneBrandsTab() {
     try {
       if (formMode === 'create') {
         const request: CreateStoneBrandRequest = {
-          name: formData.name,
+          code: formData.code,
+          nameTr: formData.nameTr,
           isActive: formData.isActive,
         };
         await createStoneBrand(request);
         showToast('Marka başarıyla oluşturuldu.', 'success');
       } else if (formMode === 'edit' && selectedBrand) {
         const request: UpdateStoneBrandRequest = {
-          name: formData.name,
+          nameTr: formData.nameTr,
           isActive: formData.isActive,
         };
         await updateStoneBrand(selectedBrand.id, request);
@@ -110,6 +115,8 @@ export default function StoneBrandsTab() {
       if (err instanceof StonesApiError) {
         if (err.code === 'FORBIDDEN') {
           showToast('Erişim reddedildi. Admin yetkisi gerekli.', 'error');
+        } else if (err.code === 'DUPLICATE_CODE') {
+          showToast('Bu kod zaten kullanımda.', 'error');
         } else {
           showToast(err.message, 'error');
         }
@@ -122,8 +129,8 @@ export default function StoneBrandsTab() {
     }
   }
 
-  async function handleDelete(brand: StoneBrandWithAudit) {
-    if (!confirm(`"${brand.name}" markasını silmek istediğinizden emin misiniz?`)) {
+  async function handleDelete(brand: StoneBrand) {
+    if (!confirm(`"${brand.nameTr}" markasını silmek istediğinizden emin misiniz?`)) {
       return;
     }
 
@@ -192,13 +199,16 @@ export default function StoneBrandsTab() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Kod
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Marka Adı
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Durum
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Son Güncelleyen
+                  İstatistikler
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   İşlemler
@@ -209,7 +219,10 @@ export default function StoneBrandsTab() {
               {brands.map((brand) => (
                 <tr key={brand.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{brand.name}</div>
+                    <div className="text-sm font-mono text-gray-900">{brand.code}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{brand.nameTr}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {brand.isActive ? (
@@ -225,12 +238,9 @@ export default function StoneBrandsTab() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {brand.lastUpdater ? (
+                    {brand._count ? (
                       <div className="text-sm text-gray-600">
-                        <div>{brand.lastUpdater.email}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(brand.lastUpdater.timestamp).toLocaleDateString('tr-TR')}
-                        </div>
+                        {brand._count.collections} koleksiyon, {brand._count.stones} taş
                       </div>
                     ) : (
                       <span className="text-sm text-gray-400">-</span>
@@ -274,14 +284,33 @@ export default function StoneBrandsTab() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Marka Adı
+                  Marka Kodu
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
+                  required
+                  disabled={formMode === 'edit'}
+                  placeholder="MARMARA"
+                />
+                {formMode === 'edit' && (
+                  <p className="text-xs text-gray-500 mt-1">Kod düzenlenemez</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Marka Adı (Türkçe)
+                </label>
+                <input
+                  type="text"
+                  value={formData.nameTr}
+                  onChange={(e) => setFormData({ ...formData, nameTr: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   required
+                  placeholder="Marmara Mermer"
                 />
               </div>
 

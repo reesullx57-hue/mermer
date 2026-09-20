@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Loader2, AlertCircle, Check, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, AlertCircle, Check, X, Image as ImageIcon } from 'lucide-react';
 import type {
-  StoneWithAudit,
-  StoneColorWithAudit,
+  StoneColor,
   CreateStoneColorRequest,
   UpdateStoneColorRequest,
 } from '@/lib/types/stone';
 import {
-  fetchStones,
   fetchStoneColors,
   createStoneColor,
   updateStoneColor,
@@ -22,42 +20,41 @@ type FormMode = 'create' | 'edit' | null;
 
 interface FormData {
   stoneId: string;
-  name: string;
+  code: string;
+  nameTr: string;
   m2Price: string;
   wastePercent: string;
+  textureUrl: string;
   isActive: boolean;
 }
 
 export default function StoneColorsTab() {
-  const [colors, setColors] = useState<StoneColorWithAudit[]>([]);
-  const [stones, setStones] = useState<StoneWithAudit[]>([]);
+  const [colors, setColors] = useState<StoneColor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<FormMode>(null);
-  const [selectedColor, setSelectedColor] = useState<StoneColorWithAudit | null>(null);
+  const [selectedColor, setSelectedColor] = useState<StoneColor | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     stoneId: '',
-    name: '',
+    code: '',
+    nameTr: '',
     m2Price: '',
     wastePercent: '',
+    textureUrl: '',
     isActive: true,
   });
 
   useEffect(() => {
-    loadData();
+    loadColors();
   }, []);
 
-  async function loadData() {
+  async function loadColors() {
     setLoading(true);
     setError(null);
     try {
-      const [colorsData, stonesData] = await Promise.all([
-        fetchStoneColors(),
-        fetchStones(),
-      ]);
-      setColors(colorsData);
-      setStones(stonesData);
+      const data = await fetchStoneColors(undefined, true); // All stones, include inactive
+      setColors(data);
     } catch (err) {
       if (err instanceof StonesApiError) {
         if (err.code === 'FORBIDDEN') {
@@ -78,22 +75,30 @@ export default function StoneColorsTab() {
     setFormMode('create');
     setSelectedColor(null);
     setFormData({
-      stoneId: stones.length > 0 ? stones[0].id : '',
-      name: '',
+      stoneId: '',
+      code: '',
+      nameTr: '',
       m2Price: '',
       wastePercent: '',
+      textureUrl: '',
       isActive: true,
     });
   }
 
-  function openEditForm(color: StoneColorWithAudit) {
+  function openEditForm(color: StoneColor) {
     setFormMode('edit');
     setSelectedColor(color);
+    // Convert wastePercent from 0-1 range to percentage for display
+    const wastePercentDisplay = color.wastePercent 
+      ? (parseFloat(color.wastePercent) * 100).toString()
+      : '';
     setFormData({
       stoneId: color.stoneId,
-      name: color.name,
+      code: color.code,
+      nameTr: color.nameTr,
       m2Price: color.m2Price,
-      wastePercent: color.wastePercent !== null ? String(color.wastePercent) : '',
+      wastePercent: wastePercentDisplay,
+      textureUrl: color.textureUrl || '',
       isActive: color.isActive,
     });
   }
@@ -103,42 +108,57 @@ export default function StoneColorsTab() {
     setSelectedColor(null);
   }
 
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const localPath = `/local/textures/${file.name}`;
+      setFormData({ ...formData, textureUrl: localPath });
+      showToast(`Dosya seçildi: ${file.name} (ADR-019 stub - yerel yol)`, 'success');
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
 
     try {
+      // Convert wastePercent from percentage (0-100) to decimal (0-1) for PE API
       const wastePercentValue = formData.wastePercent.trim() === '' 
         ? null 
-        : parseFloat(formData.wastePercent);
+        : parseFloat(formData.wastePercent) / 100;
 
       if (formMode === 'create') {
         const request: CreateStoneColorRequest = {
           stoneId: formData.stoneId,
-          name: formData.name,
-          m2Price: formData.m2Price,
+          code: formData.code,
+          nameTr: formData.nameTr,
+          m2Price: parseFloat(formData.m2Price),
           wastePercent: wastePercentValue,
+          textureUrl: formData.textureUrl || null,
           isActive: formData.isActive,
         };
         await createStoneColor(request);
         showToast('Renk başarıyla oluşturuldu.', 'success');
       } else if (formMode === 'edit' && selectedColor) {
         const request: UpdateStoneColorRequest = {
-          stoneId: formData.stoneId,
-          name: formData.name,
-          m2Price: formData.m2Price,
+          code: formData.code,
+          nameTr: formData.nameTr,
+          m2Price: parseFloat(formData.m2Price),
           wastePercent: wastePercentValue,
+          textureUrl: formData.textureUrl || null,
           isActive: formData.isActive,
         };
         await updateStoneColor(selectedColor.id, request);
         showToast('Renk başarıyla güncellendi.', 'success');
       }
       closeForm();
-      loadData();
+      loadColors();
     } catch (err) {
       if (err instanceof StonesApiError) {
         if (err.code === 'FORBIDDEN') {
           showToast('Erişim reddedildi. Admin yetkisi gerekli.', 'error');
+        } else if (err.code === 'STONE_NOT_FOUND') {
+          showToast('Taş bulunamadı.', 'error');
         } else {
           showToast(err.message, 'error');
         }
@@ -151,15 +171,15 @@ export default function StoneColorsTab() {
     }
   }
 
-  async function handleDelete(color: StoneColorWithAudit) {
-    if (!confirm(`"${color.name}" rengini silmek istediğinizden emin misiniz?`)) {
+  async function handleDelete(color: StoneColor) {
+    if (!confirm(`"${color.nameTr}" rengini silmek istediğinizden emin misiniz?`)) {
       return;
     }
 
     try {
       await deleteStoneColor(color.id);
       showToast('Renk başarıyla silindi.', 'success');
-      loadData();
+      loadColors();
     } catch (err) {
       if (err instanceof StonesApiError) {
         if (err.code === 'FORBIDDEN') {
@@ -203,9 +223,7 @@ export default function StoneColorsTab() {
         <h2 className="text-xl font-semibold text-gray-900">Taş Renkleri</h2>
         <button
           onClick={openCreateForm}
-          disabled={stones.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title={stones.length === 0 ? 'Önce taş eklemelisiniz' : ''}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
         >
           <Plus className="w-5 h-5" />
           Yeni Renk
@@ -215,11 +233,7 @@ export default function StoneColorsTab() {
       {/* Colors List */}
       {colors.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-gray-600">
-            {stones.length === 0
-              ? 'Renk eklemek için önce taş eklemelisiniz.'
-              : 'Henüz renk eklenmemiş.'}
-          </p>
+          <p className="text-gray-600">Henüz renk eklenmemiş.</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -227,10 +241,13 @@ export default function StoneColorsTab() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Kod
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Renk Adı
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Taş
+                  Taş / Marka
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   m² Fiyat
@@ -239,10 +256,10 @@ export default function StoneColorsTab() {
                   Fire %
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Durum
+                  Doku
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Son Güncelleyen
+                  Durum
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   İşlemler
@@ -253,10 +270,20 @@ export default function StoneColorsTab() {
               {colors.map((color) => (
                 <tr key={color.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{color.name}</div>
+                    <div className="text-sm font-mono text-gray-900">{color.code}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{color.stoneName || '-'}</div>
+                    <div className="text-sm font-medium text-gray-900">{color.nameTr}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {color.stone ? (
+                      <div className="text-sm text-gray-600">
+                        <div className="font-medium">{color.stone.nameTr}</div>
+                        <div className="text-xs text-gray-500">{color.stone.brand.nameTr}</div>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
@@ -265,8 +292,22 @@ export default function StoneColorsTab() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-600">
-                      {color.wastePercent !== null ? `${color.wastePercent}%` : '-'}
+                      {color.wastePercent 
+                        ? `${(parseFloat(color.wastePercent) * 100).toFixed(2)}%` 
+                        : '-'}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {color.textureUrl ? (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <ImageIcon className="w-4 h-4" />
+                        <span className="text-xs truncate max-w-[80px]" title={color.textureUrl}>
+                          {color.textureUrl.split('/').pop()}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {color.isActive ? (
@@ -279,18 +320,6 @@ export default function StoneColorsTab() {
                         <X className="w-3 h-3" />
                         Pasif
                       </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {color.lastUpdater ? (
-                      <div className="text-sm text-gray-600">
-                        <div>{color.lastUpdater.email}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(color.lastUpdater.timestamp).toLocaleDateString('tr-TR')}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-400">-</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -331,33 +360,46 @@ export default function StoneColorsTab() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Taş
+                  Taş ID
                 </label>
-                <select
+                <input
+                  type="text"
                   value={formData.stoneId}
                   onChange={(e) => setFormData({ ...formData, stoneId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"
                   required
-                >
-                  <option value="">Taş seçin</option>
-                  {stones.map((stone) => (
-                    <option key={stone.id} value={stone.id}>
-                      {stone.brandName} - {stone.collectionName} - {stone.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="cuid"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  PE stone ID (CUID format)
+                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Renk Adı
+                  Renk Kodu
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
+                  required
+                  placeholder="WHITE_01"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Renk Adı (Türkçe)
+                </label>
+                <input
+                  type="text"
+                  value={formData.nameTr}
+                  onChange={(e) => setFormData({ ...formData, nameTr: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   required
+                  placeholder="Kar Beyazı"
                 />
               </div>
 
@@ -366,18 +408,15 @@ export default function StoneColorsTab() {
                   m² Fiyat (TRY)
                 </label>
                 <input
-                  type="text"
+                  type="number"
+                  step="0.01"
+                  min="0"
                   value={formData.m2Price}
                   onChange={(e) => setFormData({ ...formData, m2Price: e.target.value })}
-                  placeholder="150.50"
-                  pattern="^\d+(\.\d{1,2})?$"
-                  title="Geçerli bir fiyat girin (örn: 150.50)"
+                  placeholder="450.50"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Ondalık ayırıcı olarak nokta kullanın (örn: 150.50)
-                </p>
               </div>
 
               <div>
@@ -386,17 +425,40 @@ export default function StoneColorsTab() {
                 </label>
                 <input
                   type="number"
-                  value={formData.wastePercent}
-                  onChange={(e) => setFormData({ ...formData, wastePercent: e.target.value })}
-                  placeholder="Boş bırakılabilir"
                   step="0.01"
                   min="0"
                   max="100"
+                  value={formData.wastePercent}
+                  onChange={(e) => setFormData({ ...formData, wastePercent: e.target.value })}
+                  placeholder="15.00"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  İsteğe bağlı - boş bırakılabilir
+                  İsteğe bağlı - boş bırakılabilir. PE API'ye 0-1 range olarak gönderilir.
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Doku Görseli (ADR-019 Stub)
+                </label>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    onChange={handleFileInput}
+                    accept="image/*"
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                  />
+                  {formData.textureUrl && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700">
+                      <ImageIcon className="w-4 h-4" />
+                      <span className="truncate">{formData.textureUrl}</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    ADR-019 stub: Dosya yerel yol olarak kaydedilir
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

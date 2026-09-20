@@ -1,135 +1,91 @@
-// Stone catalog entity types
+// Stone catalog entity types (PE API compatible)
 
 export interface StoneBrand {
   id: string;
-  name: string;
+  code: string;
+  nameTr: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface StoneBrandWithAudit extends StoneBrand {
-  lastUpdater: {
-    email: string;
-    name: string | null;
-    timestamp: string;
-  } | null;
-}
-
-export interface StoneCollection {
-  id: string;
-  brandId: string;
-  brandName?: string; // For display in list views
-  name: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface StoneCollectionWithAudit extends StoneCollection {
-  lastUpdater: {
-    email: string;
-    name: string | null;
-    timestamp: string;
-  } | null;
-}
-
-export interface Stone {
-  id: string;
-  collectionId: string;
-  collectionName?: string; // For display
-  brandName?: string; // For display
-  name: string;
-  textureUrl: string | null; // Local path or placeholder URL (ADR-019)
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface StoneWithAudit extends Stone {
-  lastUpdater: {
-    email: string;
-    name: string | null;
-    timestamp: string;
-  } | null;
+  _count?: {
+    collections: number;
+    stones: number;
+  };
 }
 
 export interface StoneColor {
   id: string;
   stoneId: string;
-  stoneName?: string; // For display
-  name: string;
+  code: string;
+  nameTr: string;
   m2Price: string; // Decimal string (e.g., "150.50")
-  wastePercent: number | null; // Nullable
+  wastePercent: string | null; // Decimal string 0-1 range (e.g., "0.15" for 15%)
   isActive: boolean;
+  textureUrl: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface StoneColorWithAudit extends StoneColor {
-  lastUpdater: {
-    email: string;
-    name: string | null;
-    timestamp: string;
-  } | null;
+  stone?: {
+    code: string;
+    nameTr: string;
+    brand: {
+      code: string;
+      nameTr: string;
+    };
+  };
 }
 
 // Request types
 export interface CreateStoneBrandRequest {
-  name: string;
-  isActive: boolean;
+  code: string;
+  nameTr: string;
+  isActive?: boolean;
 }
 
 export interface UpdateStoneBrandRequest {
-  name?: string;
-  isActive?: boolean;
-}
-
-export interface CreateStoneCollectionRequest {
-  brandId: string;
-  name: string;
-  isActive: boolean;
-}
-
-export interface UpdateStoneCollectionRequest {
-  brandId?: string;
-  name?: string;
-  isActive?: boolean;
-}
-
-export interface CreateStoneRequest {
-  collectionId: string;
-  name: string;
-  textureUrl?: string | null;
-  isActive: boolean;
-}
-
-export interface UpdateStoneRequest {
-  collectionId?: string;
-  name?: string;
-  textureUrl?: string | null;
+  nameTr?: string;
   isActive?: boolean;
 }
 
 export interface CreateStoneColorRequest {
   stoneId: string;
-  name: string;
-  m2Price: string;
-  wastePercent?: number | null;
-  isActive: boolean;
+  code: string;
+  nameTr: string;
+  m2Price: number; // PE expects number, will convert from string
+  wastePercent?: number | null; // 0-1 range, nullable
+  isActive?: boolean;
+  textureUrl?: string | null;
 }
 
 export interface UpdateStoneColorRequest {
-  stoneId?: string;
-  name?: string;
-  m2Price?: string;
+  code?: string;
+  nameTr?: string;
+  m2Price?: number;
   wastePercent?: number | null;
   isActive?: boolean;
+  textureUrl?: string | null;
+}
+
+// Wrapped response types (PE API format)
+export interface BrandsResponse {
+  brands: StoneBrand[];
+}
+
+export interface BrandResponse {
+  brand: StoneBrand;
+}
+
+export interface ColorsResponse {
+  colors: StoneColor[];
+}
+
+export interface ColorResponse {
+  color: StoneColor;
 }
 
 export interface ApiError {
   error: {
     code: string;
     message: string;
+    details?: any;
   };
 }
