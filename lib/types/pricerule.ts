@@ -15,7 +15,26 @@ export interface PriceRule {
   value: string;
   createdAt: string;
   updatedAt: string;
-  updatedBy: string | null;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  userId: string;
+  userName: string | null;
+  userEmail: string;
+  changes: string | null;
+  createdAt: string;
+}
+
+export interface PriceRuleWithAudit extends PriceRule {
+  lastUpdater: {
+    email: string;
+    name: string | null;
+    timestamp: string;
+  } | null;
 }
 
 export interface CreatePriceRuleRequest {

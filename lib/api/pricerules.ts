@@ -1,5 +1,6 @@
 import type {
   PriceRule,
+  PriceRuleWithAudit,
   CreatePriceRuleRequest,
   UpdatePriceRuleRequest,
   ApiError,
@@ -47,7 +48,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
-export async function fetchPriceRules(): Promise<PriceRule[]> {
+export async function fetchPriceRules(): Promise<PriceRuleWithAudit[]> {
   const response = await fetch('/api/admin/pricerules', {
     method: 'GET',
     headers: {
@@ -55,12 +56,12 @@ export async function fetchPriceRules(): Promise<PriceRule[]> {
     },
   });
 
-  return handleResponse<PriceRule[]>(response);
+  return handleResponse<PriceRuleWithAudit[]>(response);
 }
 
 export async function createPriceRule(
   data: CreatePriceRuleRequest
-): Promise<PriceRule> {
+): Promise<PriceRuleWithAudit> {
   const response = await fetch('/api/admin/pricerules', {
     method: 'POST',
     headers: {
@@ -69,13 +70,13 @@ export async function createPriceRule(
     body: JSON.stringify(data),
   });
 
-  return handleResponse<PriceRule>(response);
+  return handleResponse<PriceRuleWithAudit>(response);
 }
 
 export async function updatePriceRule(
   id: string,
   data: UpdatePriceRuleRequest
-): Promise<PriceRule> {
+): Promise<PriceRuleWithAudit> {
   const response = await fetch(`/api/admin/pricerules/${id}`, {
     method: 'PATCH',
     headers: {
@@ -84,10 +85,10 @@ export async function updatePriceRule(
     body: JSON.stringify(data),
   });
 
-  return handleResponse<PriceRule>(response);
+  return handleResponse<PriceRuleWithAudit>(response);
 }
 
-export async function deactivatePriceRule(id: string): Promise<PriceRule> {
+export async function deactivatePriceRule(id: string): Promise<PriceRuleWithAudit> {
   const now = new Date().toISOString();
   return updatePriceRule(id, { validTo: now });
 }

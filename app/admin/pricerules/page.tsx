@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Tag, Plus, Edit2, XCircle, Loader2, AlertCircle } from 'lucide-react';
 import type {
-  PriceRule,
+  PriceRuleWithAudit,
   PriceRuleCode,
   CreatePriceRuleRequest,
   UpdatePriceRuleRequest,
@@ -45,11 +45,11 @@ interface FormData {
 }
 
 export default function PriceRulesPage() {
-  const [rules, setRules] = useState<PriceRule[]>([]);
+  const [rules, setRules] = useState<PriceRuleWithAudit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<FormMode>(null);
-  const [selectedRule, setSelectedRule] = useState<PriceRule | null>(null);
+  const [selectedRule, setSelectedRule] = useState<PriceRuleWithAudit | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     code: 'SINK_HOLE',
@@ -95,7 +95,7 @@ export default function PriceRulesPage() {
     });
   }
 
-  function openEditForm(rule: PriceRule) {
+  function openEditForm(rule: PriceRuleWithAudit) {
     setFormMode('edit');
     setSelectedRule(rule);
     setFormData({
@@ -156,7 +156,7 @@ export default function PriceRulesPage() {
     }
   }
 
-  async function handleDeactivate(rule: PriceRule) {
+  async function handleDeactivate(rule: PriceRuleWithAudit) {
     if (!confirm(`"${PRICE_RULE_LABELS[rule.code]}" kuralını devre dışı bırakmak istediğinizden emin misiniz?`)) {
       return;
     }
@@ -258,7 +258,7 @@ export default function PriceRulesPage() {
                   Geçerlilik Sonu
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Güncelleme
+                  Son Güncelleyen
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   İşlemler
@@ -291,9 +291,13 @@ export default function PriceRulesPage() {
                         : '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      <div>{new Date(rule.updatedAt).toLocaleDateString('tr-TR')}</div>
-                      {rule.updatedBy && (
-                        <div className="text-xs text-gray-500">{rule.updatedBy}</div>
+                      {rule.lastUpdater ? (
+                        <>
+                          <div>{new Date(rule.lastUpdater.timestamp).toLocaleDateString('tr-TR')}</div>
+                          <div className="text-xs text-gray-500">{rule.lastUpdater.email}</div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-gray-400 italic">Henüz güncellenmedi</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

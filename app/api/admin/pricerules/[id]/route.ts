@@ -1,93 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import type { PriceRule, UpdatePriceRuleRequest } from '@/lib/types/pricerule';
+import type {
+  PriceRuleWithAudit,
+  UpdatePriceRuleRequest,
+  AuditLogEntry,
+} from '@/lib/types/pricerule';
+import { mockAuditLogs, mockRules } from '../route';
 
-const mockRules: Map<string, PriceRule> = new Map([
-  [
-    '1',
-    {
-      id: '1',
-      code: 'SINK_HOLE',
-      version: 1,
-      validFrom: '2024-01-01T00:00:00.000Z',
-      validTo: null,
-      value: '300.00',
-      createdAt: '2024-01-01T10:00:00.000Z',
-      updatedAt: '2024-09-20T10:00:00.000Z',
-      updatedBy: 'admin@demo.local',
-    },
-  ],
-  [
-    '2',
-    {
-      id: '2',
-      code: 'COOKTOP_HOLE',
-      version: 1,
-      validFrom: '2024-01-01T00:00:00.000Z',
-      validTo: null,
-      value: '250.00',
-      createdAt: '2024-01-01T10:00:00.000Z',
-      updatedAt: '2024-09-20T10:00:00.000Z',
-      updatedBy: 'admin@demo.local',
-    },
-  ],
-  [
-    '3',
-    {
-      id: '3',
-      code: 'INSTALL',
-      version: 1,
-      validFrom: '2024-01-01T00:00:00.000Z',
-      validTo: null,
-      value: '500.00',
-      createdAt: '2024-01-01T10:00:00.000Z',
-      updatedAt: '2024-09-20T10:00:00.000Z',
-      updatedBy: 'admin@demo.local',
-    },
-  ],
-  [
-    '4',
-    {
-      id: '4',
-      code: 'WASTE_DEFAULT_PERCENT',
-      version: 1,
-      validFrom: '2024-01-01T00:00:00.000Z',
-      validTo: null,
-      value: '0.15',
-      createdAt: '2024-01-01T10:00:00.000Z',
-      updatedAt: '2024-09-20T10:00:00.000Z',
-      updatedBy: 'admin@demo.local',
-    },
-  ],
-  [
-    '5',
-    {
-      id: '5',
-      code: 'MIN_AREA_M2',
-      version: 1,
-      validFrom: '2024-01-01T00:00:00.000Z',
-      validTo: null,
-      value: '2.5',
-      createdAt: '2024-01-01T10:00:00.000Z',
-      updatedAt: '2024-09-20T10:00:00.000Z',
-      updatedBy: 'admin@demo.local',
-    },
-  ],
-  [
-    '6',
-    {
-      id: '6',
-      code: 'MIN_ORDER_AMOUNT',
-      version: 1,
-      validFrom: '2024-01-01T00:00:00.000Z',
-      validTo: null,
-      value: '1000.00',
-      createdAt: '2024-01-01T10:00:00.000Z',
-      updatedAt: '2024-09-20T10:00:00.000Z',
-      updatedBy: 'admin@demo.local',
-    },
-  ],
-]);
+function getLatestAuditLog(entityId: string): AuditLogEntry | null {
+  const logs = mockAuditLogs
+    .filter((log) => log.entityId === entityId && log.action === 'UPDATE')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  
+  return logs[0] || null;
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -120,6 +46,7 @@ export async function PATCH(
   }
 
   const data: UpdatePriceRuleRequest = await request.json();
+  const oldValue = { ...rule };
 
   const updatedRule: PriceRule = {
     ...rule,
@@ -128,10 +55,36 @@ export async function PATCH(
     validTo: data.validTo !== undefined ? data.validTo : rule.validTo,
     value: data.value !== undefined ? data.value : rule.value,
     updatedAt: new Date().toISOString(),
-    updatedBy: session.email,
   };
 
   mockRules.set(id, updatedRule);
 
-  return NextResponse.json(updatedRule);
+  const changes: Record<string, { old: any; new: any }> = {};
+  if (data.validFrom !== undefined) changes.validFrom = { old: oldValue.validFrom, new: data.validFrom };
+  if (data.validTo !== undefined) changes.validTo = { old: oldValue.validTo, new: data.validTo };
+  if (data.value !== undefined) changes.value = { old: oldValue.value, new: data.value };
+
+  const auditLog: AuditLogEntry = {
+    id: `audit-${mockAuditLogs.length + 1}`,
+    entityType: 'PRICE_RULE',
+    entityId: id,
+    action: 'UPDATE',
+    userId: session.userId,
+    userName: session.email.split('@')[0],
+    userEmail: session.email,
+    changes: JSON.stringify(changes),
+    createdAt: new Date().toISOString(),
+  };
+  mockAuditLogs.push(auditLog);
+
+  const ruleWithAudit: PriceRuleWithAudit = {
+    ...updatedRule,
+    lastUpdater: {
+      email: auditLog.userEmail,
+      name: auditLog.userName,
+      timestamp: auditLog.createdAt,
+    },
+  };
+
+  return NextResponse.json(ruleWithAudit);
 }
