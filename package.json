@@ -17,7 +17,9 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.20.0"
+    "@prisma/client": "^5.20.0",
+    "decimal.js": "^10.6.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
