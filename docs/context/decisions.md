@@ -178,3 +178,89 @@ LIMIT 1
 - İlgili sprint: F2 Gate 2 - Admin Price Rules UI
 - İlgili ADR: ADR-015 (Admin RBAC), ADR-017 (API 403 JSON)
 - Backend: Pricing Engine - AuditLog schema ve service
+
+---
+
+## ADR-019: Texture Upload F2 Stub (Local Path Placeholder)
+
+**Durum:** Kabul Edildi  
+**Tarih:** 2026-09-20  
+**Karar Veren:** Ürün Sahibi
+
+### Bağlam
+
+F2 sprint kapsamında taş kataloğu yönetimi için doku (texture) görseli yükleme özelliği gereklidir. Ancak tam dosya yükleme altyapısı (S3, CDN, image processing) daha sonraki bir sprint'te tamamlanacaktır.
+
+### Karar
+
+**F2 sprint'inde texture upload "stub" olarak uygulanacaktır:**
+
+1. Frontend'de file input kullanılacak
+2. Seçilen dosya adı yerel yol formatında kaydedilecek (örn: `/local/textures/filename.jpg`)
+3. Backend API texture URL'ini string olarak kabul edip saklar
+4. Gerçek dosya yükleme yapılmaz - sadece placeholder path kaydedilir
+
+### Uygulama Detayları
+
+**Frontend:**
+```typescript
+function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+  const file = e.target.files?.[0];
+  if (file) {
+    const localPath = `/local/textures/${file.name}`;
+    setFormData({ ...formData, textureUrl: localPath });
+    showToast(`Dosya seçildi: ${file.name} (F2 stub - yerel yol)`, 'success');
+  }
+}
+```
+
+**Backend:**
+```typescript
+interface Stone {
+  textureUrl: string | null; // Nullable string
+}
+```
+
+**Örnek Değerler:**
+- `/local/textures/white-marble.jpg`
+- `/placeholder/textures/black-granite.png`
+- `null` (doku yüklenmedi)
+
+### Nedeni
+
+1. **Sprint Kapsamı:** Tam dosya yükleme F2 sprint dışında
+2. **UI Testi:** Frontend form ve flow test edilebilir
+3. **API Contract:** Backend API zaten string URL kabul ediyor
+4. **Hızlı İterasyon:** Gerçek yükleme altyapısı beklenmeden UI tamamlanır
+5. **Temiz Geçiş:** İleride gerçek URL'ler aynı alan kullanılacak
+
+### Gelecek Uygulama (F3+)
+
+Tam dosya yükleme özelliği:
+1. Multipart form data ile dosya yükleme
+2. S3 veya benzeri object storage
+3. Image processing (resize, optimize, format conversion)
+4. CDN distribution
+5. `textureUrl` alanında gerçek public URL
+
+### Sonuçlar
+
+**Pozitif:**
+- F2 sprint için UI tamamlanır
+- API contract değişmez
+- Test edilebilir form flow
+
+**Negatif:**
+- Gerçek görsel önizleme yapılamaz (F2 limitasyonu)
+- Manuel veri temizliği gerekebilir (placeholder path'ler)
+
+### Kullanıcı Bilgilendirmesi
+
+Frontend'de dosya seçimi sonrası gösterilecek mesaj:
+> "F2 stub: Dosya yerel yol olarak kaydedilir. Gerçek yükleme daha sonra eklenecek."
+
+### Referanslar
+
+- İlgili sprint: F2 Frontend - Stone Catalog CRUD
+- İlgili ADR: ADR-018 (AuditLog last updater)
+- Backend: Stone entity schema

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import type {
+  PriceRule,
   PriceRuleWithAudit,
   UpdatePriceRuleRequest,
   AuditLogEntry,
 } from '@/lib/types/pricerule';
-import { mockAuditLogs, mockRules } from '../route';
+import { mockRules, mockAuditLogs } from '@/lib/mock-data/pricerules';
 
 function getLatestAuditLog(entityId: string): AuditLogEntry | null {
   const logs = mockAuditLogs
@@ -17,7 +18,7 @@ function getLatestAuditLog(entityId: string): AuditLogEntry | null {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
 
