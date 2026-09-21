@@ -1,57 +1,371 @@
-// Prisma schema for Mermer stone fabrication app
+// prisma/schema.prisma — F1 draft v3 validated (single definitions, no duplicates)
+// F1: POST /api/pricing/quote yalnızca hesaplar; Quote persist ayrı ADR.
+// VAT: PriceRule'da VAT yok — TaxConfig.vatRate tek kaynak.
+// Accessory = fiziksel ürün; PriceRule = hizmet/eşik (SINK_HOLE, COOKTOP_HOLE, INSTALL, WASTE_*, MIN_*).
+// ShippingZone: district "" = il geneli.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  DEALER
+  ADMIN
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  IN_PRODUCTION
+  DELIVERED
+  CANCELLED
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  name      String?
+  id            String      @id @default(cuid())
+  email         String      @unique
+  name          String?
+  passwordHash  String?
+  role          Role        @default(USER)
+  dealerId      String?
+  dealer        Dealer?     @relation(fields: [dealerId], references: [id])
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  quotesOwned   Quote[]     @relation("QuoteOwner")
+  quotesCreated Quote[]     @relation("QuoteCreatedBy")
+  quotesUpdated Quote[]     @relation("QuoteUpdatedBy")
+  orders        Order[]
+  auditLogs     AuditLog[]
+  importJobs    ImportJob[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Dealer {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  nameTr       String
+  discountRate Decimal  @db.Decimal(12, 4)
+  isActive     Boolean  @default(true)
+  users        User[]
+  quotes       Quote[]
+  orders       Order[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model StoneBrand {
+  id          String            @id @default(cuid())
+  code        String            @unique
+  nameTr      String
+  isActive    Boolean           @default(true)
+  collections StoneCollection[]
+  stones      Stone[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model StoneCollection {
+  id        String     @id @default(cuid())
+  brandId   String
+  brand     StoneBrand @relation(fields: [brandId], references: [id])
+  code      String
+  nameTr    String
+  isActive  Boolean    @default(true)
+  stones    Stone[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([brandId, code])
+}
+
+model Stone {
+  id           String           @id @default(cuid())
+  brandId      String
+  brand        StoneBrand       @relation(fields: [brandId], references: [id])
+  collectionId String?
+  collection   StoneCollection? @relation(fields: [collectionId], references: [id])
+  code         String           @unique
+  nameTr       String
+  isActive     Boolean          @default(true)
+  colors       StoneColor[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model StoneColor {
+  id             String          @id @default(cuid())
+  stoneId        String
+  stone          Stone           @relation(fields: [stoneId], references: [id])
+  code           String
+  nameTr         String
+  m2Price        Decimal         @db.Decimal(12, 2)
+  wastePercent   Decimal?        @db.Decimal(12, 4)
+  textureUrl     String?
+  isActive       Boolean         @default(true)
+  configurations Configuration[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([stoneId, code])
+}
+
+model Thickness {
+  id             String          @id @default(cuid())
+  cm             Int             @unique
+  nameTr         String
+  coefficient    Decimal         @db.Decimal(12, 4)
+  isActive       Boolean         @default(true)
+  configurations Configuration[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model FormType {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  nameTr         String
+  coefficient    Decimal         @db.Decimal(12, 4)
+  isActive       Boolean         @default(true)
+  configurations Configuration[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model EdgeType {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  nameTr         String
+  coefficient    Decimal         @db.Decimal(12, 4)
+  isActive       Boolean         @default(true)
+  configurations Configuration[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Accessory {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  nameTr    String
+  unit      String
+  unitPrice Decimal  @db.Decimal(12, 2)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PriceRule {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  nameTr    String
+  value     Decimal   @db.Decimal(12, 4)
+  unit      String?
+  version   Int       @default(1)
+  validFrom DateTime?
+  validTo   DateTime?
+  isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  projects  Project[]
 }
 
-model Project {
-  id              String    @id @default(uuid())
-  name            String
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  slabPhotoUrl    String?
-  slabWidth       Float?    // in mm
-  slabHeight      Float?    // in mm
-  calibrationData String?   // JSON: corner points, transform matrix
-  calibratedImageUrl String?
-  pieces          Piece[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+model ShippingZone {
+  id               String   @id @default(cuid())
+  city             String
+  district         String   @default("")
+  fee              Decimal  @db.Decimal(12, 2)
+  installAvailable Boolean  @default(true)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  @@index([userId])
+  @@unique([city, district])
 }
 
-model Piece {
-  id          String   @id @default(uuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name        String
-  type        String   // "rectangle", "L-shape", "polygon", "dxf"
-  geometry    String   // JSON: points for polygon
-  x           Float    // position on slab (mm)
-  y           Float    // position on slab (mm)
-  rotation    Float    @default(0) // degrees
-  flipped     Boolean  @default(false)
-  width       Float?   // mm
-  height      Float?   // mm
-  orderIndex  Int      @default(0)
+model Discount {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  nameTr    String
+  rate      Decimal?  @db.Decimal(12, 4)
+  amount    Decimal?  @db.Decimal(12, 2)
+  isActive  Boolean   @default(true)
+  validFrom DateTime?
+  validTo   DateTime?
+  quotes    Quote[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model TaxConfig {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  vatRate   Decimal  @db.Decimal(12, 4)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Configuration {
+  id               String     @id @default(cuid())
+  stoneColorId     String
+  stoneColor       StoneColor @relation(fields: [stoneColorId], references: [id])
+  thicknessId      String
+  thickness        Thickness  @relation(fields: [thicknessId], references: [id])
+  formTypeId       String
+  formType         FormType   @relation(fields: [formTypeId], references: [id])
+  edgeTypeId       String
+  edgeType         EdgeType   @relation(fields: [edgeTypeId], references: [id])
+  dimensions       Json
+  sinkType         String?
+  sinkHoles        Int        @default(0)
+  cooktopHole      Boolean    @default(false)
+  skirtingEnabled  Boolean    @default(false)
+  skirtingHeightCm Int?
+  trimEnabled      Boolean    @default(false)
+  trimModel        String?
+  panelled         Boolean    @default(false)
+  sideBoxEnabled   Boolean    @default(false)
+  sideBoxSizeCm    Int?
+  install          Boolean    @default(false)
+  quotes           Quote[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Quote {
+  id              String        @id @default(cuid())
+  userId          String?
+  user            User?         @relation("QuoteOwner", fields: [userId], references: [id])
+  createdById     String?
+  createdBy       User?         @relation("QuoteCreatedBy", fields: [createdById], references: [id])
+  updatedById     String?
+  updatedBy       User?         @relation("QuoteUpdatedBy", fields: [updatedById], references: [id])
+  dealerId        String?
+  dealer          Dealer?       @relation(fields: [dealerId], references: [id])
+  configurationId String
+  configuration   Configuration @relation(fields: [configurationId], references: [id])
+  status          QuoteStatus   @default(DRAFT)
+  currency        String        @default("TRY")
+  subtotalExVat   Decimal       @db.Decimal(12, 2)
+  dealerDiscount  Decimal       @db.Decimal(12, 2) @default(0)
+  discountId      String?
+  discount        Discount?     @relation(fields: [discountId], references: [id])
+  promoDiscount   Decimal       @db.Decimal(12, 2) @default(0)
+  vatAmount       Decimal       @db.Decimal(12, 2)
+  totalInclVat    Decimal       @db.Decimal(12, 2)
+  pricingSnapshot Json          @db.JsonB
+  lines           QuoteLine[]
+  orders          Order[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model QuoteLine {
+  id        String  @id @default(cuid())
+  quoteId   String
+  quote     Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  code      String
+  label     String
+  unit      String
+  quantity  Decimal @db.Decimal(12, 4)
+  unitPrice Decimal @db.Decimal(12, 4)
+  lineTotal Decimal @db.Decimal(12, 2)
+  sortOrder Int     @default(0)
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  quoteId         String
+  quote           Quote       @relation(fields: [quoteId], references: [id])
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id])
+  dealerId        String?
+  dealer          Dealer?     @relation(fields: [dealerId], references: [id])
+  status          OrderStatus @default(DRAFT)
+  totalInclVat    Decimal     @db.Decimal(12, 2)
+  pricingSnapshot Json        @db.JsonB
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model ImportJob {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  entityType  String
+  filename    String
+  totalRows   Int
+  successRows Int
+  errorRows   Int
+  status      String
+  errorReport Json?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  @@index([projectId])
+  @@index([userId, createdAt])
+  @@index([entityType, status])
 }

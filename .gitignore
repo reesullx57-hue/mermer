@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # dependencies
 /node_modules
 /.pnp
@@ -39,3 +40,41 @@ next-env.d.ts
 
 # uploads
 /public/uploads
+||||||| 63f1b3f
+=======
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env*.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Prisma
+*.db
+*.db-journal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+>>>>>>> origin/cursor/pricing-engine-f1-schema-migration-a29a
