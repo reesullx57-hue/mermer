@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // prisma/schema.prisma — F1 draft v3 validated (single definitions, no duplicates)
 // F1: POST /api/pricing/quote yalnızca hesaplar; Quote persist ayrı ADR.
 // VAT: PriceRule'da VAT yok — TaxConfig.vatRate tek kaynak.
@@ -369,3 +370,70 @@ model ImportJob {
   @@index([userId, createdAt])
   @@index([entityType, status])
 }
+||||||| 63f1b3f
+=======
+// Prisma schema for Mermer stone fabrication app
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  ADMIN
+  DEALER
+  USER
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String?
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id              String    @id @default(uuid())
+  name            String
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slabPhotoUrl    String?
+  slabWidth       Float?    // in mm
+  slabHeight      Float?    // in mm
+  calibrationData String?   // JSON: corner points, transform matrix
+  calibratedImageUrl String?
+  pieces          Piece[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Piece {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  type        String   // "rectangle", "L-shape", "polygon", "dxf"
+  geometry    String   // JSON: points for polygon
+  x           Float    // position on slab (mm)
+  y           Float    // position on slab (mm)
+  rotation    Float    @default(0) // degrees
+  flipped     Boolean  @default(false)
+  width       Float?   // mm
+  height      Float?   // mm
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+}
+>>>>>>> origin/cursor/f2-admin-layout-rbac-ce2f
