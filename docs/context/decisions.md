@@ -661,3 +661,78 @@ model ImportJob {
 - Admin UI can display row numbers directly from error JSON
 - Future headerless support requires detection logic + optional `rowNumberType` field
 - No API changes needed for current header-required imports
+
+---
+
+## ADR-029 — AuditLog UI Filtering and Display
+**Status:** Accepted (F2 Gate 7).
+
+**Decision:** Admin audit UI fetches paginated AuditLog entries via `GET /api/admin/audit` with filtering by entityType, entityId, userId, action, and date range. Pagination defaults to 50 items per page. Before/after diffs are displayed as side-by-side JSON (syntax highlighted in UI). ImportJob entries are included in the feed (via `entityType=ImportJob` or mixed query) with status badge fields (totalRows, successRows, errorRows).
+
+**Query Parameters:**
+- `entityType` (optional): Filter by entity type (e.g., "PriceRule", "StoneColor", "ImportJob")
+- `entityId` (optional): Filter by specific entity ID
+- `userId` (optional): Filter by user who performed action
+- `action` (optional): Filter by action type (e.g., "CREATE", "UPDATE", "IMPORT")
+- `from` (optional): ISO date string, filter createdAt >= from
+- `to` (optional): ISO date string, filter createdAt <= to
+- `page` (optional): Page number (1-indexed, default 1)
+- `pageSize` (optional): Items per page (default 50, max 100)
+
+**Response Format:**
+```typescript
+{
+  items: Array<{
+    id: string;
+    createdAt: string;  // ISO timestamp
+    userId: string;
+    userEmail?: string; // Included via join
+    action: string;     // CREATE | UPDATE | DELETE | IMPORT
+    entityType: string; // PriceRule | StoneColor | ImportJob | ...
+    entityId?: string;
+    before: any;        // JSON (null for CREATE)
+    after: any;         // JSON (null for DELETE)
+    summary?: string;   // Optional human-readable summary
+    // For ImportJob entries (when entityType=ImportJob or entityId is ImportJob.id):
+    importJobStatus?: string;
+    importJobTotalRows?: number;
+    importJobSuccessRows?: number;
+    importJobErrorRows?: number;
+  }>;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+```
+
+**Before/After Diff Display:**
+- UI shows side-by-side JSON comparison
+- Syntax highlighting for readability
+- Null values: CREATE shows only `after`, DELETE shows only `before`
+- UPDATE shows both with changed fields highlighted
+- F2 Gate 7 returns raw JSON; F3+ may add computed diff/patch
+
+**ImportJob Integration:**
+- AuditLog entries with `action=IMPORT` link to ImportJob via `entityId`
+- API can optionally include ImportJob metadata (status, row counts) via join
+- UI displays import entries with status badge (SUCCESS green, VALIDATION_ERROR red)
+- Clicking import entry shows full ImportJob details + error report if present
+
+**Pagination Strategy:**
+- Default 50 items per page (balance between load and scrolling)
+- Max 100 items per page (prevent excessive queries)
+- Total count included for pagination UI
+- Ordered by `createdAt DESC` (newest first)
+
+**Rationale:**
+- **50 items default**: Typical admin audit review fits 1-2 screens; reduces query load
+- **Before/after raw JSON**: Simple implementation; F3+ can add visual diff library
+- **ImportJob in feed**: Unified audit trail; no separate import history page needed
+- **Rich filtering**: Admins can drill down by entity, user, action, or date range
+
+**Impact:**
+- F2 Gate 7 implements `GET /api/admin/audit` with filtering + pagination
+- Admin UI can display chronological audit feed with filters
+- ImportJob entries appear as special audit items with status badges
+- Future: Visual diff highlighting, export to CSV, retention policy
