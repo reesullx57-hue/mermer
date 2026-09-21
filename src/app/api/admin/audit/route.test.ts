@@ -89,7 +89,7 @@ describe('GET /api/admin/audit', () => {
           data: {
             userId: adminUserId,
             action: 'IMPORT',
-            entityType: 'Stone',
+            entityType: 'ImportJob',
             entityId: importJob.id,
             before: Prisma.JsonNull,
             after: { filename: `test-import-${i}.csv`, totalRows: 10 },

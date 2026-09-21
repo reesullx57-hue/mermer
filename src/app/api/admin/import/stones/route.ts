@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     // If any errors, return immediately (no writes)
     if (errors.length > 0) {
       // Create ImportJob for validation failure
-      await prisma.importJob.create({
+      const failedJob = await prisma.importJob.create({
         data: {
           userId: user!.id,
           entityType: 'Stone',
@@ -112,6 +112,23 @@ export async function POST(request: NextRequest) {
           errorRows: errors.length,
           status: 'VALIDATION_ERROR',
           errorReport: errors as any,
+        },
+      });
+
+      // Create AuditLog for failed import
+      await prisma.auditLog.create({
+        data: {
+          userId: user!.id,
+          action: 'IMPORT',
+          entityType: 'ImportJob',
+          entityId: failedJob.id,
+          before: Prisma.JsonNull,
+          after: {
+            filename,
+            totalRows: records.length,
+            status: 'VALIDATION_ERROR',
+            errorCount: errors.length,
+          },
         },
       });
 
@@ -265,7 +282,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user!.id,
         action: 'IMPORT',
-        entityType: 'Stone',
+        entityType: 'ImportJob',
         entityId: importJob.id,
         before: Prisma.JsonNull,
         after: {

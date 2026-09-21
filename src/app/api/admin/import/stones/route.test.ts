@@ -206,7 +206,7 @@ describe('POST /api/admin/import/stones', () => {
 
     // Verify AuditLog entry
     const auditLog = await prisma.auditLog.findFirst({
-      where: { action: 'IMPORT', entityType: 'Stone', entityId: importJob!.id },
+      where: { action: 'IMPORT', entityType: 'ImportJob', entityId: importJob!.id },
       orderBy: { createdAt: 'desc' },
     });
     expect(auditLog).toBeDefined();

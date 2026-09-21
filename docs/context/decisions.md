@@ -714,8 +714,9 @@ model ImportJob {
 - F2 Gate 7 returns raw JSON; F3+ may add computed diff/patch
 
 **ImportJob Integration:**
-- AuditLog entries with `action=IMPORT` link to ImportJob via `entityId`
-- API can optionally include ImportJob metadata (status, row counts) via join
+- AuditLog entries with `action=IMPORT` use `entityType=ImportJob` and link to ImportJob via `entityId`
+- Filter `?entityType=ImportJob` returns all import audit entries
+- API includes ImportJob metadata (status, row counts) via join for these entries
 - UI displays import entries with status badge (SUCCESS green, VALIDATION_ERROR red)
 - Clicking import entry shows full ImportJob details + error report if present
 
