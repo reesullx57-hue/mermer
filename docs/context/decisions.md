@@ -1,118 +1,156 @@
-# Architecture Decision Records (ADR)
+# Architecture Decision Records (ADRs)
 
-## ADR-028: CSV Row Numbering Convention
+Bu dosya Mermer projesi için mimari kararları içerir.
 
-**Status**: Adopted  
-**Date**: 2026-09-21  
-**Context**: Import UI Error Reporting
+---
 
-### Decision
+## ADR-015: Admin Panel RBAC (Role-Based Access Control)
 
-CSV row numbers in error messages and UI display **MUST** use **file line numbers including the CSV header**.
+**Durum:** Kabul Edildi  
+**Tarih:** 2026-09-20  
+**Karar Veren:** Ürün Sahibi
 
-### Rationale
+### Bağlam
 
-**Single Source of Truth**: Using file line numbers (1-indexed from file start) provides:
-- Unambiguous reference that users can verify in any text editor
-- No confusion between "data row" vs "file line"
-- Direct correspondence with Excel/LibreOffice row numbers
-- Consistent numbering across all import error messages
+Mermer uygulaması için yönetim paneli (admin paneli) gerektirmektedir. Bu panel, taş katalog yönetimi, fiyatlandırma kuralları, nakliye ve vergi ayarları gibi hassas iş operasyonlarını içerecektir. Bu işlevlerin yalnızca yetkili personel tarafından erişilebilir olması kritik öneme sahiptir.
 
-### Convention
+### Karar
 
+`/admin/*` altındaki tüm rotalar yalnızca ADMIN rolüne sahip kullanıcılar tarafından erişilebilir olacaktır. Bu kısıtlama:
+
+1. **Next.js Middleware** seviyesinde uygulanacak - kimliği doğrulanmamış kullanıcılar login sayfasına yönlendirilir
+2. **Server Component Guard** ile desteklenecek - ADMIN olmayan kullanıcılar 403 Forbidden hatası alır veya ana sayfaya yönlendirilir
+3. Prisma şemasında mevcut `Role` enum kullanılacak: `ADMIN | DEALER | USER`
+4. Oturum verileri kullanıcının rolünü içerecek şekilde genişletilecek
+
+### Roller
+
+- **ADMIN**: Tam admin panel erişimi (`/admin/*`)
+- **DEALER**: Bayii portalı erişimi (gelecek sprint)
+- **USER**: Standart kullanıcı - proje ve taş kesim işlemleri
+
+### Sonuçlar
+
+**Pozitif:**
+- Açık erişim kontrolü ve güvenlik
+- Rol tabanlı özellik geliştirme için temel altyapı
+- Middleware + server guard ile çift katmanlı koruma
+
+**Negatif:**
+- Oturum yönetimi ek karmaşıklık gerektirir (role bilgisi)
+- Rol değişikliklerinde oturum yenileme gerekebilir
+
+### Teknik Detaylar
+
+- JWT oturum yükü `role` alanı içerecek
+- Middleware `/admin` rotalarını koruyacak
+- Admin layout sunucu bileşeninde rol doğrulaması yapacak
+- Demo/seed verilerinde admin@demo.local kullanıcısı ADMIN rolüyle oluşturulacak
+
+### Referanslar
+
+- İlgili sprint: F2 Frontend - Admin Layout & RBAC
+- Prisma Schema: `Role` enum tanımı
+- Next.js Middleware: `middleware.ts`
+
+---
+
+## ADR-029: Admin Denetim Kaydı UI Tasarımı
+
+**Durum:** Kabul Edildi  
+**Tarih:** 2026-09-21  
+**Karar Veren:** Frontend Ekibi
+
+### Bağlam
+
+Admin paneli için kapsamlı bir denetim kaydı (audit log) arayüzü gereklidir. Sistem, kullanıcı aktivitelerini, veri değişikliklerini ve içe aktarma işlemlerini izleyecek ve ADMIN rolüne sahip kullanıcılara detaylı raporlama sunacaktır.
+
+### Karar
+
+`/admin/audit` sayfası aşağıdaki özellikleri içerecek şekilde geliştirilecektir:
+
+#### Liste Görünümü
+- **Kolonlar:** Tarih, Kullanıcı, İşlem (CREATE/UPDATE/DELETE/IMPORT), Varlık Tipi, Varlık ID, Özet, Detay
+- **Sıralama:** createdAt DESC (en yeni kayıtlar üstte)
+- **Sayfalama:** 50 kayıt/sayfa
+
+#### Filtreleme
+- Varlık tipi dropdown (Stone, PriceRule, ShippingRule, TaxRate, Discount, ImportJob vb.)
+- Varlık ID arama (case-insensitive kısmi eşleşme)
+- Kullanıcı dropdown
+- Tarih aralığı (başlangıç/bitiş)
+- İşlem tipi (CREATE/UPDATE/DELETE/IMPORT)
+
+#### Detay Görünümü
+- Modal popup ile açılır
+- CREATE işlemleri için: Yalnızca "sonrası" JSON verisi
+- DELETE işlemleri için: Yalnızca "öncesi" JSON verisi
+- UPDATE işlemleri için: Yan yana "öncesi/sonrası" JSON karşılaştırması
+  - Değişen alanlar sarı ile vurgulanır
+  - Değişen alan listesi üstte gösterilir
+- IMPORT işlemleri için: İçe aktarma yapılandırması ve istatistikler
+
+#### ImportJob Özel İşleme
+- Liste görünümünde ImportJob satırları için:
+  - Başarı/hata rozeti (tüm başarılı = yeşil ✓, hatalar var = turuncu ⚠)
+  - Toplam/başarılı/hata sayıları alt satırda gösterilir
+- Detay görünümünde: İçe aktarma metrikleri ayrı bir bölümde vurgulanır
+
+#### CSV Dışa Aktarma
+- Filtrelenmiş liste CSV olarak indirilebilir
+- Kolonlar: Tarih, Kullanıcı, İşlem, Varlık Tipi, Varlık ID, Özet
+- Dosya adı: `denetim-kayitlari-YYYY-MM-DD.csv`
+
+#### Güvenlik ve Erişim
+- ADMIN layout içinde çalışır (otomatik RBAC koruması)
+- API endpoint `/api/admin/audit` 403 FORBIDDEN döndüğünde UI'da hata mesajı gösterilir
+- Metadata endpoint `/api/admin/audit/metadata` filtreleme dropdown'ları için kullanıcı ve varlık tipi listelerini sağlar
+
+### Teknik Detaylar
+
+- **Framework:** Next.js 15 (App Router)
+- **UI Bileşenleri:** Client-side (`'use client'`) - interaktif filtreler ve modal için
+- **Stil:** Tailwind CSS - mevcut admin panel tasarım sistemiyle tutarlı
+- **İkonlar:** lucide-react (History, Search, Filter, Download, X, ChevronLeft, ChevronRight)
+- **State Yönetimi:** React hooks (useState, useEffect, useCallback)
+- **API İletişimi:** fetch API ile `/api/admin/audit` ve `/api/admin/audit/metadata`
+
+#### Dosya Yapısı
 ```
-File Line | Content Type    | Row Number in Errors
-----------|-----------------|---------------------
-1         | Header row      | (not in errors)
-2         | First data row  | row: 2
-3         | Second data row | row: 3
-8         | Seventh data    | row: 8
+app/admin/audit/
+  ├── page.tsx              # Ana liste görünümü ve filtreleme
+  └── AuditDetailModal.tsx  # Detay modal bileşeni
+app/api/admin/audit/
+  ├── route.ts              # Liste endpoint (GET)
+  └── metadata/
+      └── route.ts          # Metadata endpoint (GET)
 ```
 
-**Example**:
-- CSV file has header on line 1
-- Data starts on line 2
-- An error in the 7th data row (file line 8) is reported as `row: 8`
-- UI displays: **"Satır 8"** (not "Satır 7")
+### Sonuçlar
 
-### Implementation
+**Pozitif:**
+- Kapsamlı aktivite takibi ve şeffaflık
+- Güçlü filtreleme ve arama yetenekleri
+- Değişikliklerin görsel karşılaştırması (diff highlighting)
+- CSV dışa aktarma ile raporlama esnekliği
+- ImportJob özel gösterimi ile toplu işlem görünürlüğü
+- Türkçe arayüz - yerel kullanıcı deneyimi
 
-#### Pricing Engine (PE) API
-- PE returns `row` as **file line number** (1-indexed from file start)
-- Data row 1 → `row: 2` (second line of file)
-- Data row 7 → `row: 8` (eighth line of file)
+**Negatif:**
+- İlk sürüm mock data kullanır (backend AuditLog modeli gelecek sprint'te eklenecek)
+- Büyük JSON nesneleri modal performansını etkileyebilir
+- CSV dışa aktarma tarayıcı tarafında yapılır (büyük veri setleri için sunucu tarafı gerekebilir)
 
-#### Frontend Display
-- UI displays `error.row` directly from PE response
-- **No conversion needed** - PE already uses file line numbers
-- Table header: "Satır" (Row)
-- Cell content: `#8` for file line 8
+### Gelecek İyileştirmeler
 
-#### Mock API Implementation
-When implementing validation:
-```typescript
-// CSV parsing with header
-const records = parse(content, { columns: true });
+1. Backend Prisma AuditLog modeli entegrasyonu
+2. Gerçek zamanlı audit log akışı (WebSocket/SSE)
+3. Gelişmiş JSON diff kütüphanesi (örn. `react-diff-viewer`)
+4. Sunucu tarafında CSV oluşturma (büyük veri setleri için)
+5. Audit log arşivleme ve saklama politikaları
 
-// Validate each record
-records.forEach((record, index) => {
-  const fileLineNumber = index + 2; // +2 because:
-                                     // - index starts at 0
-                                     // - header is line 1
-  
-  if (validationFails) {
-    errors.push({
-      row: fileLineNumber,  // File line number
-      field: 'fieldName',
-      reason: 'Error message'
-    });
-  }
-});
-```
+### Referanslar
 
-### UI Labels
-
-**Error Table Headers** (Turkish):
-- **Satır**: Row number (file line including header)
-- **Alan**: Field name (CSV column name)
-- **Açıklama**: Error description (Turkish message)
-
-**Clarification in UI** (if needed):
-- Tooltip or help text can explain: "Satır numaraları dosya satırlarını gösterir (başlık dahil)"
-- Translation: "Row numbers show file lines (including header)"
-
-### Benefits
-
-1. **No Ambiguity**: "Satır 8" always means line 8 of the CSV file
-2. **Editor Alignment**: Users can open CSV in text editor and jump to line 8
-3. **Excel Compatibility**: Excel row numbers match (if header is row 1)
-4. **Debugging**: Easy to trace errors back to source file
-5. **Consistency**: Same numbering in PE, UI, logs, and documentation
-
-### Anti-Patterns to Avoid
-
-❌ **Don't**: Convert file line numbers to "data row" numbers in UI  
-❌ **Don't**: Use 0-indexed row numbers  
-❌ **Don't**: Show different row numbers in different parts of UI  
-❌ **Don't**: Subtract 1 from PE row numbers for display  
-
-✅ **Do**: Display PE row numbers exactly as returned  
-✅ **Do**: Use file line numbers throughout the system  
-✅ **Do**: Document this convention in error messages  
-
-### Related
-
-- **ADR-027**: ImportJob specification (references ADR-028 for row numbering)
-- **API Endpoint**: `POST /api/admin/import/stones`
-- **UI Component**: `app/admin/import/page.tsx`
-
-### Notes
-
-This convention applies to:
-- All CSV import error reporting
-- Admin UI error tables
-- API responses from PE
-- Logs and audit trails
-- Export functionality (if errors are exported)
-
-Last updated: 2026-09-21
+- İlgili sprint: F2 Frontend - Admin Audit UI
+- ADR-015: Admin Panel RBAC (erişim kontrolü için)
+- API Endpoint: `/api/admin/audit` (backend PE entegrasyonu bekleniyor)
