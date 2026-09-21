@@ -56,20 +56,34 @@ This document provides visual evidence of the `/admin/audit` UI implementation, 
 
 **Features Demonstrated:**
 - ✅ Side-by-side JSON comparison
-- ✅ **"Önceki"** (Before) panel - Red background (🔴)
-- ✅ **"Sonraki"** (After) panel - Green background (🟢)
-- ✅ Changed fields highlighted in **yellow** (multiplier: 1.2 → 1.5)
+- ✅ **"Önceki"** (Before) panel - Red/pink background (🔴 300 tone)
+- ✅ **"Sonraki"** (After) panel - Green background (🟢 400 tone)
+- ✅ Changed fields highlighted in **yellow** (value, amount, description)
 - ✅ "Değişen alanlar" (Changed fields) banner at top
 - ✅ Full audit log metadata displayed:
   - Date, User, Action, Entity Type, Entity ID, Summary
 - ✅ Modal with close button (X)
 
-**Example Change Shown:**
+**Example Change Shown - SINK_HOLE PriceRule:**
 ```diff
-PriceRule UPDATE
-- multiplier: 1.2
-+ multiplier: 1.5
+PriceRule UPDATE: price-rule-sink-hole-789
+SINK_HOLE kesim fiyatlandırması güncellendi: 300 TL → 400 TL
+
+Before (🔴 red tone):
+- value: 300
+- amount: 300
+- description: "Lavabo deliği kesim ücreti"
+
+After (🟢 green tone):
++ value: 400
++ amount: 400
++ description: "Lavabo deliği kesim ücreti - güncel"
 ```
+
+**Color Coding:**
+- 🔴 Before panel: Red/pink background (300 tone) per PO requirement
+- 🟢 After panel: Green background (400 tone) per PO requirement
+- 🟡 Changed fields: Yellow highlight for visibility
 
 ---
 
@@ -79,17 +93,31 @@ PriceRule UPDATE
 ![ImportJob Row](screenshots/audit-importjob-row.png)
 
 **Features Demonstrated:**
-- ✅ ImportJob entity type clearly visible
-- ✅ **Success badge** (green ✓) or Error badge (orange ⚠) based on status
-- ✅ Import statistics displayed below summary:
+- ✅ **BOTH** ImportJob badge types visible in same screenshot
+- ✅ ImportJob entity type clearly visible for both rows
+
+**First ImportJob (with errors):**
+- ✅ **Error badge** (orange/red ⚠) - "⚠ Hatalar Var"
+- ✅ Import statistics with errors:
   - **Toplam:** 150 (Total rows)
-  - **Başarılı:** 148 (Successful)
-  - **Hata:** 2 (Errors)
-- ✅ Visual indication of import job completion status
+  - **Başarılı:** 145 (Successful)
+  - **Hata:** 5 (Errors)
+- ✅ Visual indication of partial failure
+
+**Second ImportJob (successful):**
+- ✅ **Success badge** (green ✓) - "✓ Başarılı"
+- ✅ Import statistics all successful:
+  - **Toplam:** 25 (Total rows)
+  - **Başarılı:** 25 (Successful)
+  - **Hata:** 0 (Errors)
+- ✅ Visual indication of complete success
 
 **Badge Logic:**
 - 🟢 Green "✓ Başarılı" if `importJobErrorRows === 0`
-- 🟠 Orange "⚠ Hatalar Var" if errors present
+- 🟠 Orange/Red "⚠ Hatalar Var" if errors present
+
+**Contrast Demonstrated:**
+Both success (green) and error (orange/red) badges visible in single screenshot as required by PO checklist.
 
 ---
 
