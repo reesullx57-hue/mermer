@@ -10,19 +10,17 @@ interface AuditLog {
   id: string;
   createdAt: string;
   userId: string;
-  userName: string;
+  userEmail: string;
   action: AuditAction;
   entityType: string;
   entityId: string;
   summary: string;
   before?: any;
   after?: any;
-  metadata?: {
-    importJobId?: string;
-    totalCount?: number;
-    successCount?: number;
-    errorCount?: number;
-  };
+  importJobStatus?: string;
+  importJobTotalRows?: number;
+  importJobSuccessRows?: number;
+  importJobErrorRows?: number;
 }
 
 interface Filters {
@@ -52,7 +50,7 @@ export default function AuditPage() {
     dateTo: '',
   });
 
-  const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; email: string }[]>([]);
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
 
   const pageSize = 50;
@@ -85,9 +83,9 @@ export default function AuditPage() {
       }
 
       const data = await response.json();
-      setLogs(data.logs || []);
+      setLogs(data.items || []);
       setTotalPages(data.totalPages || 1);
-      setTotalCount(data.totalCount || 0);
+      setTotalCount(data.total || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bir hata oluştu');
     } finally {
@@ -141,7 +139,7 @@ export default function AuditPage() {
     const headers = ['Tarih', 'Kullanıcı', 'İşlem', 'Varlık Tipi', 'Varlık ID', 'Özet'];
     const rows = logs.map((log) => [
       new Date(log.createdAt).toLocaleString('tr-TR'),
-      log.userName,
+      log.userEmail,
       log.action,
       log.entityType,
       log.entityId,
@@ -176,10 +174,9 @@ export default function AuditPage() {
   };
 
   const getImportBadge = (log: AuditLog) => {
-    if (log.entityType !== 'ImportJob' || !log.metadata) return null;
+    if (log.action !== 'IMPORT' || log.importJobStatus === undefined) return null;
 
-    const { successCount = 0, errorCount = 0 } = log.metadata;
-    const success = errorCount === 0;
+    const success = log.importJobStatus === 'completed' || log.importJobErrorRows === 0;
 
     return (
       <span
@@ -271,7 +268,7 @@ export default function AuditPage() {
                   <option value="">Tümü</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.name}
+                      {user.email}
                     </option>
                   ))}
                 </select>
@@ -392,7 +389,7 @@ export default function AuditPage() {
                           {new Date(log.createdAt).toLocaleString('tr-TR')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {log.userName}
+                          {log.userEmail}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -414,10 +411,10 @@ export default function AuditPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {log.summary}
-                          {log.entityType === 'ImportJob' && log.metadata && (
+                          {log.action === 'IMPORT' && log.importJobTotalRows !== undefined && (
                             <div className="text-xs text-gray-500 mt-1">
-                              Toplam: {log.metadata.totalCount} | Başarılı:{' '}
-                              {log.metadata.successCount} | Hata: {log.metadata.errorCount}
+                              Toplam: {log.importJobTotalRows} | Başarılı:{' '}
+                              {log.importJobSuccessRows} | Hata: {log.importJobErrorRows}
                             </div>
                           )}
                         </td>

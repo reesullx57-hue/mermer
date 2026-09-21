@@ -7,19 +7,17 @@ interface AuditLog {
   id: string;
   createdAt: string;
   userId: string;
-  userName: string;
+  userEmail: string;
   action: string;
   entityType: string;
   entityId: string;
   summary: string;
   before?: any;
   after?: any;
-  metadata?: {
-    importJobId?: string;
-    totalCount?: number;
-    successCount?: number;
-    errorCount?: number;
-  };
+  importJobStatus?: string;
+  importJobTotalRows?: number;
+  importJobSuccessRows?: number;
+  importJobErrorRows?: number;
 }
 
 interface Props {
@@ -139,7 +137,7 @@ export default function AuditDetailModal({ log, onClose }: Props) {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Kullanıcı</label>
-              <p className="text-gray-900 font-medium">{log.userName}</p>
+              <p className="text-gray-900 font-medium">{log.userEmail}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">İşlem</label>
@@ -159,23 +157,29 @@ export default function AuditDetailModal({ log, onClose }: Props) {
             </div>
           </div>
 
-          {log.entityType === 'ImportJob' && log.metadata && (
+          {log.action === 'IMPORT' && log.importJobTotalRows !== undefined && (
             <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
               <h3 className="font-semibold text-purple-900 mb-2">İçe Aktarma Detayları</h3>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-purple-700 font-medium">Toplam:</span>{' '}
-                  <span className="text-purple-900">{log.metadata.totalCount}</span>
+                  <span className="text-purple-900">{log.importJobTotalRows}</span>
                 </div>
                 <div>
                   <span className="text-green-700 font-medium">Başarılı:</span>{' '}
-                  <span className="text-green-900">{log.metadata.successCount}</span>
+                  <span className="text-green-900">{log.importJobSuccessRows}</span>
                 </div>
                 <div>
                   <span className="text-red-700 font-medium">Hata:</span>{' '}
-                  <span className="text-red-900">{log.metadata.errorCount}</span>
+                  <span className="text-red-900">{log.importJobErrorRows}</span>
                 </div>
               </div>
+              {log.importJobStatus && (
+                <div className="mt-2 text-sm">
+                  <span className="text-purple-700 font-medium">Durum:</span>{' '}
+                  <span className="text-purple-900">{log.importJobStatus}</span>
+                </div>
+              )}
             </div>
           )}
 
