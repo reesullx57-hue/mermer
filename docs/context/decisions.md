@@ -618,3 +618,46 @@ model ImportJob {
 - Error reports stored in ImportJob.errorReport for debugging
 - AuditLog provides "last import by" timestamp for entity listings
 - F2 Gate 6+ implements ImportJob model + POST /api/admin/import/stones
+
+---
+
+## ADR-028 — CSV Row Numbering UX (Excel-Aligned)
+**Status:** Accepted (F2 Gate 6).
+
+**Decision:** Error `row` field is ALWAYS 1-based FILE line number, including header row when present. This aligns with Excel/spreadsheet UX where users see line numbers starting from 1. UI must display the same row number shown in the error response (no conversion needed).
+
+**Row Numbering Rules:**
+1. **Header present (default)**: Row 1 = header, Row 2 = first data row
+   - Error on data row 7 → `{ row: 8 }` (file line 8)
+   - User opens CSV in Excel → sees line 8 highlighted
+2. **Headerless mode** (future): Row 1 = first data row
+   - Detection: Required columns (`brand`, `collection`, `stoneCode`, etc.) missing from first line → treat as headerless
+   - Error on data row 7 → `{ row: 7 }` (file line 7)
+
+**Optional Enhancement (future):**
+```json
+{
+  "row": 8,
+  "rowNumberType": "file",  // "file" | "data"
+  "field": "m2Price",
+  "reason": "Invalid m2Price format"
+}
+```
+
+**Current Implementation:**
+- All CSV imports assume header present (first line)
+- Row numbers are 1-indexed from file start
+- Error messages use file line numbers directly
+- Example: CSV with header + 10 data rows → row numbers 2-11 for data
+
+**Rationale:**
+- **Excel-aligned UX**: Users expect row numbers to match their spreadsheet application
+- **No mental conversion**: Error "row 8" → user goes to line 8 in Excel
+- **Consistent**: All CSV tools (Excel, LibreOffice, text editors) show line numbers starting from 1
+- **Simple**: No need for UI to calculate "display row" vs "data row"
+
+**Impact:**
+- F2 Gate 6 import errors report file line numbers (1-indexed, header included)
+- Admin UI can display row numbers directly from error JSON
+- Future headerless support requires detection logic + optional `rowNumberType` field
+- No API changes needed for current header-required imports
