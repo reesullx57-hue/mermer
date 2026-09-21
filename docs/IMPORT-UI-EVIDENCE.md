@@ -69,6 +69,12 @@ Complete CSV import UI implementation with visual evidence captured for PO revie
 
 **Key Feature**: All error messages in Turkish, clear field-level validation
 
+**ADR-028 Compliance**: Row numbers (3-8) are **file line numbers** including header:
+- Line 1 = Header
+- Line 2 = First data row (valid)
+- Lines 3-8 = Data rows with errors ✅
+- Users can open CSV in any editor and jump directly to these line numbers
+
 ---
 
 ## 🧪 Test Data
@@ -164,13 +170,20 @@ FormData {
   success: boolean,
   imported: number,      // Rows successfully imported/validated
   errors: Array<{
-    row: number,         // Satır no
-    field: string,       // Alan
-    reason: string       // Sebep (Turkish)
+    row: number,         // Satır no (ADR-028: file line number, header = line 1)
+    field: string,       // Alan (field name)
+    reason: string       // Sebep (Turkish error message)
   }>,
   message?: string
 }
 ```
+
+**ADR-028 Row Numbering Convention**:
+- `row` = CSV file line number (1-indexed, includes header)
+- Header is line 1, first data row is line 2
+- Error in 7th data row (line 8 of file) → `row: 8`
+- UI displays `error.row` directly (no conversion)
+- See `docs/context/decisions.md` for complete ADR-028 specification
 
 ### Example Responses
 
@@ -252,6 +265,8 @@ Screenshots show enforcement of:
 - ✅ `IMPLEMENTATION_SUMMARY.md` - Technical details
 - ✅ `docs/IMPORT-UI-EVIDENCE.md` - This file (PO evidence)
 - ✅ `docs/SCREENSHOT_SUMMARY.md` - Screenshot catalog
+- ✅ `docs/context/decisions.md` - ADR-028 row numbering specification
+- ✅ `docs/ADR-028-VERIFICATION.md` - Row numbering compliance verification
 
 ### Evidence
 - ✅ 4 high-quality screenshots (1034 KB total)

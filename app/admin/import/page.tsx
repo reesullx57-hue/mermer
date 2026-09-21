@@ -16,9 +16,9 @@ interface CsvRow {
 }
 
 interface ImportError {
-  row: number;
-  field: string;
-  reason: string;
+  row: number;    // File line number per ADR-028 (includes header, so data row 1 = row 2)
+  field: string;  // CSV column name
+  reason: string; // Turkish error message
 }
 
 interface ImportResult {
@@ -358,7 +358,7 @@ export default function ImportPage() {
               </div>
             </div>
 
-            {/* Error List */}
+            {/* Error List - ADR-028: Row numbers are file line numbers (header = line 1) */}
             {result.errors && result.errors.length > 0 && (
               <div className="mt-4 space-y-2">
                 <h4 className="font-semibold text-gray-900 mb-3">Hatalar:</h4>

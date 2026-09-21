@@ -56,8 +56,9 @@ export async function POST(request: NextRequest) {
     const errors: ValidationError[] = [];
 
     // Validate each row
+    // ADR-028: Use file line numbers (header = line 1, first data = line 2)
     records.forEach((record, index) => {
-      const rowNumber = index + 2; // +2 because index starts at 0 and we skip header
+      const rowNumber = index + 2; // File line number (index=0 → row 2, first data row)
 
       // Check required fields
       if (!record.brand || record.brand.trim() === '') {

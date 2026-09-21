@@ -1,54 +1,118 @@
-# Architecture Decision Records (ADRs)
+# Architecture Decision Records (ADR)
 
-Bu dosya Mermer projesi için mimari kararları içerir.
+## ADR-028: CSV Row Numbering Convention
 
----
+**Status**: Adopted  
+**Date**: 2026-09-21  
+**Context**: Import UI Error Reporting
 
-## ADR-015: Admin Panel RBAC (Role-Based Access Control)
+### Decision
 
-**Durum:** Kabul Edildi  
-**Tarih:** 2026-09-20  
-**Karar Veren:** Ürün Sahibi
+CSV row numbers in error messages and UI display **MUST** use **file line numbers including the CSV header**.
 
-### Bağlam
+### Rationale
 
-Mermer uygulaması için yönetim paneli (admin paneli) gerektirmektedir. Bu panel, taş katalog yönetimi, fiyatlandırma kuralları, nakliye ve vergi ayarları gibi hassas iş operasyonlarını içerecektir. Bu işlevlerin yalnızca yetkili personel tarafından erişilebilir olması kritik öneme sahiptir.
+**Single Source of Truth**: Using file line numbers (1-indexed from file start) provides:
+- Unambiguous reference that users can verify in any text editor
+- No confusion between "data row" vs "file line"
+- Direct correspondence with Excel/LibreOffice row numbers
+- Consistent numbering across all import error messages
 
-### Karar
+### Convention
 
-`/admin/*` altındaki tüm rotalar yalnızca ADMIN rolüne sahip kullanıcılar tarafından erişilebilir olacaktır. Bu kısıtlama:
+```
+File Line | Content Type    | Row Number in Errors
+----------|-----------------|---------------------
+1         | Header row      | (not in errors)
+2         | First data row  | row: 2
+3         | Second data row | row: 3
+8         | Seventh data    | row: 8
+```
 
-1. **Next.js Middleware** seviyesinde uygulanacak - kimliği doğrulanmamış kullanıcılar login sayfasına yönlendirilir
-2. **Server Component Guard** ile desteklenecek - ADMIN olmayan kullanıcılar 403 Forbidden hatası alır veya ana sayfaya yönlendirilir
-3. Prisma şemasında mevcut `Role` enum kullanılacak: `ADMIN | DEALER | USER`
-4. Oturum verileri kullanıcının rolünü içerecek şekilde genişletilecek
+**Example**:
+- CSV file has header on line 1
+- Data starts on line 2
+- An error in the 7th data row (file line 8) is reported as `row: 8`
+- UI displays: **"Satır 8"** (not "Satır 7")
 
-### Roller
+### Implementation
 
-- **ADMIN**: Tam admin panel erişimi (`/admin/*`)
-- **DEALER**: Bayii portalı erişimi (gelecek sprint)
-- **USER**: Standart kullanıcı - proje ve taş kesim işlemleri
+#### Pricing Engine (PE) API
+- PE returns `row` as **file line number** (1-indexed from file start)
+- Data row 1 → `row: 2` (second line of file)
+- Data row 7 → `row: 8` (eighth line of file)
 
-### Sonuçlar
+#### Frontend Display
+- UI displays `error.row` directly from PE response
+- **No conversion needed** - PE already uses file line numbers
+- Table header: "Satır" (Row)
+- Cell content: `#8` for file line 8
 
-**Pozitif:**
-- Açık erişim kontrolü ve güvenlik
-- Rol tabanlı özellik geliştirme için temel altyapı
-- Middleware + server guard ile çift katmanlı koruma
+#### Mock API Implementation
+When implementing validation:
+```typescript
+// CSV parsing with header
+const records = parse(content, { columns: true });
 
-**Negatif:**
-- Oturum yönetimi ek karmaşıklık gerektirir (role bilgisi)
-- Rol değişikliklerinde oturum yenileme gerekebilir
+// Validate each record
+records.forEach((record, index) => {
+  const fileLineNumber = index + 2; // +2 because:
+                                     // - index starts at 0
+                                     // - header is line 1
+  
+  if (validationFails) {
+    errors.push({
+      row: fileLineNumber,  // File line number
+      field: 'fieldName',
+      reason: 'Error message'
+    });
+  }
+});
+```
 
-### Teknik Detaylar
+### UI Labels
 
-- JWT oturum yükü `role` alanı içerecek
-- Middleware `/admin` rotalarını koruyacak
-- Admin layout sunucu bileşeninde rol doğrulaması yapacak
-- Demo/seed verilerinde admin@demo.local kullanıcısı ADMIN rolüyle oluşturulacak
+**Error Table Headers** (Turkish):
+- **Satır**: Row number (file line including header)
+- **Alan**: Field name (CSV column name)
+- **Açıklama**: Error description (Turkish message)
 
-### Referanslar
+**Clarification in UI** (if needed):
+- Tooltip or help text can explain: "Satır numaraları dosya satırlarını gösterir (başlık dahil)"
+- Translation: "Row numbers show file lines (including header)"
 
-- İlgili sprint: F2 Frontend - Admin Layout & RBAC
-- Prisma Schema: `Role` enum tanımı
-- Next.js Middleware: `middleware.ts`
+### Benefits
+
+1. **No Ambiguity**: "Satır 8" always means line 8 of the CSV file
+2. **Editor Alignment**: Users can open CSV in text editor and jump to line 8
+3. **Excel Compatibility**: Excel row numbers match (if header is row 1)
+4. **Debugging**: Easy to trace errors back to source file
+5. **Consistency**: Same numbering in PE, UI, logs, and documentation
+
+### Anti-Patterns to Avoid
+
+❌ **Don't**: Convert file line numbers to "data row" numbers in UI  
+❌ **Don't**: Use 0-indexed row numbers  
+❌ **Don't**: Show different row numbers in different parts of UI  
+❌ **Don't**: Subtract 1 from PE row numbers for display  
+
+✅ **Do**: Display PE row numbers exactly as returned  
+✅ **Do**: Use file line numbers throughout the system  
+✅ **Do**: Document this convention in error messages  
+
+### Related
+
+- **ADR-027**: ImportJob specification (references ADR-028 for row numbering)
+- **API Endpoint**: `POST /api/admin/import/stones`
+- **UI Component**: `app/admin/import/page.tsx`
+
+### Notes
+
+This convention applies to:
+- All CSV import error reporting
+- Admin UI error tables
+- API responses from PE
+- Logs and audit trails
+- Export functionality (if errors are exported)
+
+Last updated: 2026-09-21
