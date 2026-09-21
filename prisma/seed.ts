@@ -129,6 +129,7 @@ async function main() {
         colors: {
           create: [
             {
+              id: 'cmu9pojis000vjrrp5epidwok', // Golden Test A ID
               code: 'WHITE',
               nameTr: 'Beyaz Kuvars',
               m2Price: 1680.00, // 🎯 Golden test stone
@@ -314,6 +315,7 @@ async function main() {
   const thicknesses = await Promise.all([
     prisma.thickness.create({
       data: {
+        id: 'cmu9pojiy001cjrrpmjzqfhp5',
         cm: 2,
         nameTr: '2 cm',
         coefficient: 1.00,
@@ -322,6 +324,7 @@ async function main() {
     }),
     prisma.thickness.create({
       data: {
+        id: 'cmu9pojiy001djrrp8x5dfbpi', // Golden Test A ID
         cm: 3,
         nameTr: '3 cm',
         coefficient: 1.10,
@@ -330,6 +333,7 @@ async function main() {
     }),
     prisma.thickness.create({
       data: {
+        id: 'cmu9pojiy001ejrrpi6k42vjt',
         cm: 4,
         nameTr: '4 cm',
         coefficient: 1.25,
@@ -343,6 +347,7 @@ async function main() {
   const formTypes = await Promise.all([
     prisma.formType.create({
       data: {
+        id: 'cmu9pojiz001fjrrp7x06vmew',
         code: 'STRAIGHT',
         nameTr: 'Düz',
         coefficient: 1.00,
@@ -351,6 +356,7 @@ async function main() {
     }),
     prisma.formType.create({
       data: {
+        id: 'cmu9pojj0001gjrrp0678b8d4', // Golden Test A ID
         code: 'L',
         nameTr: 'L Şekli',
         coefficient: 1.15,
@@ -359,6 +365,7 @@ async function main() {
     }),
     prisma.formType.create({
       data: {
+        id: 'cmu9pojj0001hjrrp48iwhnvu',
         code: 'U',
         nameTr: 'U Şekli',
         coefficient: 1.30,
@@ -367,6 +374,7 @@ async function main() {
     }),
     prisma.formType.create({
       data: {
+        id: 'cmu9pojj0001ijrrpnqe67dgj',
         code: 'ISLAND',
         nameTr: 'Ada',
         coefficient: 1.40,
@@ -380,6 +388,7 @@ async function main() {
   const edgeTypes = await Promise.all([
     prisma.edgeType.create({
       data: {
+        id: 'cmu9pojj2001jjrrpigr18zl7',
         code: 'STRAIGHT',
         nameTr: 'Düz Kenar',
         coefficient: 1.00,
@@ -388,6 +397,7 @@ async function main() {
     }),
     prisma.edgeType.create({
       data: {
+        id: 'cmu9pojj2001jjrrps0l86qvb', // Golden Test A ID
         code: 'RADIUS',
         nameTr: 'Radius Kenar',
         coefficient: 1.05,
@@ -396,6 +406,7 @@ async function main() {
     }),
     prisma.edgeType.create({
       data: {
+        id: 'cmu9pojj2001kjrrp8mh93ry1',
         code: 'BEVEL',
         nameTr: 'Bevel Kenar',
         coefficient: 1.10,
@@ -404,6 +415,7 @@ async function main() {
     }),
     prisma.edgeType.create({
       data: {
+        id: 'cmu9pojj2001ljrrpwfnafz6d',
         code: 'IRON',
         nameTr: 'Demir Kenar',
         coefficient: 1.15,
