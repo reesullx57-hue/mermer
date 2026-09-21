@@ -82,13 +82,14 @@ export async function POST() {
       },
     });
 
-    await createSession(demoUser.id, demoUser.email);
+    await createSession(demoUser.id, demoUser.email, demoUser.role);
 
     return NextResponse.json({
       user: {
         id: demoUser.id,
         email: demoUser.email,
         name: demoUser.name,
+        role: demoUser.role,
       },
     });
   } catch (error) {

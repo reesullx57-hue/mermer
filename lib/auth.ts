@@ -9,6 +9,7 @@ const JWT_SECRET = new TextEncoder().encode(
 export interface SessionData {
   userId: string;
   email: string;
+  role: string;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -22,8 +23,8 @@ export async function verifyPassword(
   return bcrypt.compare(password, hashedPassword);
 }
 
-export async function createSession(userId: string, email: string): Promise<string> {
-  const token = await new SignJWT({ userId, email })
+export async function createSession(userId: string, email: string, role: string): Promise<string> {
+  const token = await new SignJWT({ userId, email, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
@@ -50,8 +51,8 @@ export async function getSession(): Promise<SessionData | null> {
     const verified = await jwtVerify(token, JWT_SECRET);
     const payload = verified.payload;
     
-    if (typeof payload.userId === 'string' && typeof payload.email === 'string') {
-      return { userId: payload.userId, email: payload.email };
+    if (typeof payload.userId === 'string' && typeof payload.email === 'string' && typeof payload.role === 'string') {
+      return { userId: payload.userId, email: payload.email, role: payload.role };
     }
     
     return null;
